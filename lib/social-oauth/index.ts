@@ -67,7 +67,6 @@ function createProvider(
     }) => {
       const config = getConfig(type);
       // Build authorization URL with query parameters
-      console.log("REDIRECT URI", redirectUri);
       const params = new URLSearchParams({
         client_id: config.clientId,
         redirect_uri: redirectUri,

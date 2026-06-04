@@ -18,8 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lemon.ai | Social Media Scheduling",
-  description: "Create AI-powered social media scheduling for every platform in seconds. Lemon.ai is a platform that allows you to create social media scheduling for every platform in seconds.",
+  title: "Syntragent.ai | Social Media Scheduling",
+  description:
+    "Create AI-powered social media scheduling for every platform in seconds. Syntragent.ai is a platform that allows you to create social media scheduling for every platform in seconds.",
 };
 
 export default function RootLayout({
@@ -48,15 +49,11 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <TooltipProvider>
-                {children}
-              </TooltipProvider>
+              <TooltipProvider>{children}</TooltipProvider>
 
-              <Toaster  richColors/>
+              <Toaster richColors />
             </ThemeProvider>
-
           </QueryProvider>
-
         </ClerkProvider>
       </body>
     </html>
