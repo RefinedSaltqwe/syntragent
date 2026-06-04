@@ -1,15 +1,27 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { MessageCircle, Repeat2, Heart, BarChart2, Bookmark, Share } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  MessageCircle,
+  Repeat2,
+  Heart,
+  BarChart2,
+  Bookmark,
+  Share,
+} from "lucide-react";
 
 interface TwitterPreviewProps {
-  text: string
-  images?: string[]
-  profileImage?:string;
-  handle?:string;
+  text: string;
+  images?: string[];
+  profileImage?: string;
+  handle?: string;
 }
 
-export function TwitterPreview({ text, images,profileImage,handle }: TwitterPreviewProps) {
+export function TwitterPreview({
+  text,
+  images,
+  profileImage,
+  handle,
+}: TwitterPreviewProps) {
   return (
     <Card>
       <CardContent>
@@ -20,15 +32,25 @@ export function TwitterPreview({ text, images,profileImage,handle }: TwitterPrev
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold">{handle || "Lemon"}</span>
-              <span className="text-xs text-muted-foreground">@{handle || "lemon"}</span>
+              <span className="text-sm font-bold">
+                {handle || "Syntragent"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                @{handle || "Syntragent"}
+              </span>
             </div>
-            <p className="mt-1 text-sm whitespace-pre-wrap break-words">
-              {text || <span className="text-muted-foreground italic">Nothing yet…</span>}
+            <p className="mt-1 text-sm whitespace-pre-wrap wrap-break-word">
+              {text || (
+                <span className="text-muted-foreground italic">
+                  Nothing yet…
+                </span>
+              )}
             </p>
             {/* Images display */}
             {images && images.length > 0 && (
-              <div className={`mt-3 grid gap-1 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <div
+                className={`mt-3 grid gap-1 ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+              >
                 {images.slice(0, 4).map((image, index) => (
                   <div key={index} className="relative">
                     <img
@@ -37,9 +59,13 @@ export function TwitterPreview({ text, images,profileImage,handle }: TwitterPrev
                       className="rounded-lg w-full h-[100px] object-cover"
                     />
                     {index === 3 && images.length > 4 && (
-                      <div className="absolute inset-0 bg-black/60 
-                      rounded-lg flex items-center justify-center">
-                        <span className="text-white text-2xl font-semibold">+{images.length - 4}</span>
+                      <div
+                        className="absolute inset-0 bg-black/60 
+                      rounded-lg flex items-center justify-center"
+                      >
+                        <span className="text-white text-2xl font-semibold">
+                          +{images.length - 4}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -58,5 +84,5 @@ export function TwitterPreview({ text, images,profileImage,handle }: TwitterPrev
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

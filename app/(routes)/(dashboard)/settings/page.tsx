@@ -105,7 +105,7 @@ const SettingsPage = () => {
                 <CardHeader>
                   <CardTitle>Appearance</CardTitle>
                   <CardDescription>
-                    Customize how Lemon AI looks for you
+                    Customize how Syntragent.ai looks for you
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

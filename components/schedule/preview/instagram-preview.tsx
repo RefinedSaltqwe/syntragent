@@ -1,7 +1,14 @@
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Repeat2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Heart,
+  MessageCircle,
+  Send,
+  Bookmark,
+  MoreHorizontal,
+  Repeat2,
+} from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -9,29 +16,29 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from "@/components/ui/carousel"
+} from "@/components/ui/carousel";
 
 interface InstagramPreviewProps {
-  text: string
-  images?: string[]
-  postType?: string
+  text: string;
+  images?: string[];
+  postType?: string;
 }
 
 export function InstagramPreview({ text, images }: InstagramPreviewProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [api, setApi] = useState<CarouselApi>()
-  const [current, setCurrent] = useState(0)
-  const CHAR_LIMIT = 80
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const CHAR_LIMIT = 80;
 
   useEffect(() => {
-    if (!api) return
+    if (!api) return;
 
-    setCurrent(api.selectedScrollSnap())
+    setCurrent(api.selectedScrollSnap());
 
     api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-    })
-  }, [api])
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   return (
     <Card className="overflow-hidden border-none shadow-none">
@@ -43,7 +50,7 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
               <AvatarImage src="./images/avatar.webp" />
               <AvatarFallback>LM</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-semibold">Lemon</span>
+            <span className="text-sm font-semibold">Syntragent</span>
           </div>
           <MoreHorizontal className="size-5 text-muted-foreground" />
         </div>
@@ -65,10 +72,14 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
               </CarouselContent>
               {images.length > 1 && (
                 <>
-                  <CarouselPrevious className="left-2 bg-white/80
-                   hover:bg-white border-none size-7 [&>svg]:size-4" />
-                  <CarouselNext className="right-2 bg-white/80
-                   hover:bg-white border-none size-7 [&>svg]:size-4" />
+                  <CarouselPrevious
+                    className="left-2 bg-white/80
+                   hover:bg-white border-none size-7 [&>svg]:size-4"
+                  />
+                  <CarouselNext
+                    className="right-2 bg-white/80
+                   hover:bg-white border-none size-7 [&>svg]:size-4"
+                  />
                 </>
               )}
             </Carousel>
@@ -95,8 +106,9 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
                 {images.map((_, i) => (
                   <div
                     key={i}
-                    className={`size-1.5 rounded-full transition-colors ${i === current ? "bg-blue-500" : "bg-muted-foreground/30"
-                      }`}
+                    className={`size-1.5 rounded-full transition-colors ${
+                      i === current ? "bg-blue-500" : "bg-muted-foreground/30"
+                    }`}
                   />
                 ))}
               </div>
@@ -106,7 +118,7 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
 
           {/* Caption */}
           <div className="text-sm">
-            <span className="font-semibold mr-2">Lemon</span>
+            <span className="font-semibold mr-2">Syntragent</span>
             {!text ? (
               <span className="text-muted-foreground italic">Nothing yet…</span>
             ) : text.length > CHAR_LIMIT && !isExpanded ? (
@@ -126,5 +138,5 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
