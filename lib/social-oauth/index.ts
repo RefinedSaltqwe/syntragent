@@ -1,6 +1,28 @@
 import { ChannelTypeEnum } from "@/constants/channels";
 import { OAuthProvider, OAuthTokenResponse } from "./types";
 
+/**
+ * OAuth Provider Registry
+ *
+ * Flow:
+ * 1. User clicks "Connect Channel"
+ * 2. getOAuthProvider() returns the provider implementation
+ * 3. getAuthorizationUrl() redirects user to the provider
+ * 4. User authorizes the application
+ * 5. Provider redirects back with an authorization code
+ * 6. exchangeCodeForToken() exchanges the code for an access token
+ * 7. getProfile() fetches the user's profile information
+ * 8. Channel is connected and stored in the database
+ *
+ * Features:
+ * - Supports multiple social providers
+ * - Handles OAuth authorization flow
+ * - Supports PKCE providers (Twitter/X)
+ * - Handles token refresh
+ * - Fetches normalized profile data
+ * - Provides a unified provider interface
+ */
+
 function getEnv(key: string) {
   const value = process.env[key];
   if (!value) throw new Error(`${key} is missing.`);
@@ -20,6 +42,11 @@ function getConfig(type: ChannelTypeEnum) {
       .filter(Boolean),
   };
 }
+
+/**
+ * Exchanges OAuth credentials with the provider's
+ * token endpoint and returns token data.
+ */
 
 async function requestToken(type: ChannelTypeEnum, body: URLSearchParams) {
   const config = getConfig(type);
@@ -83,6 +110,7 @@ function createProvider(
       }
       return `${config.authUrl}?${params.toString()}`;
     },
+    // Exchange authorization code for access token
     exchangeCodeForToken: async ({
       code,
       redirectUri,
@@ -116,6 +144,7 @@ function createProvider(
         expiresAt,
       };
     },
+    // Refresh an expired access token using the refresh token
     refreshToken: async ({ refreshToken, redirectUri }) => {
       const config = getConfig(type);
       const params = new URLSearchParams({
@@ -148,8 +177,12 @@ function createProvider(
     getProfile: async ({ accessToken }) => {
       const config = getConfig(type);
 
-      // Instagram Login API special case
+      /**
+       * Instagram Login API uses a dedicated profile endpoint
+       * and returns username directly from Instagram.
+       */
       if (type === ChannelTypeEnum.INSTAGRAM) {
+        // Fetch user profile from the provider
         const response = await fetch(
           `https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`,
         );
@@ -225,6 +258,9 @@ function createProvider(
   } satisfies OAuthProvider;
 }
 
+/**
+ * Registered OAuth providers available in Syntragent.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PROVIDERS: Record<ChannelTypeEnum, any> = {
   [ChannelTypeEnum.TWITTER]: createProvider(ChannelTypeEnum.TWITTER, {
@@ -239,10 +275,18 @@ const PROVIDERS: Record<ChannelTypeEnum, any> = {
   [ChannelTypeEnum.TIKTOK]: createProvider(ChannelTypeEnum.TIKTOK),
 };
 
+/**
+ * Returns the OAuth provider implementation
+ * for the requested channel type.
+ */
 export function getOAuthProvider(type: ChannelTypeEnum) {
   return PROVIDERS[type];
 }
 
+/**
+ * Refreshes an access token using the provider's
+ * refresh token implementation.
+ */
 export async function refreshOauthToken(
   type: ChannelTypeEnum,
   refreshToken: string,
