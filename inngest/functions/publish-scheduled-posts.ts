@@ -18,7 +18,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
     name: "Publish Scheduled Posts",
     triggers: [
       {
-        cron: "*/5 * * * *",
+        cron: "*/10 * * * *",
       },
     ],
   },
@@ -294,13 +294,29 @@ async function publishToTwitter({
   images?: ImageObject[];
   logger: any;
 }) {
-  const mediaIds = images?.length
-    ? await uploadImagesToTwitter({
+  let mediaIds: string[] = [];
+
+  if (images?.length) {
+    try {
+      mediaIds = await uploadImagesToTwitter({
         accessToken,
         images,
         logger,
-      })
-    : [];
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "TWITTER_CREDITS_DEPLETED"
+      ) {
+        logger.warn(
+          "Twitter media upload skipped because API credits are exhausted",
+        );
+        mediaIds = [];
+      } else {
+        throw error;
+      }
+    }
+  }
 
   const response = await fetch("https://api.x.com/2/tweets", {
     method: "POST",
@@ -310,7 +326,7 @@ async function publishToTwitter({
     },
     body: JSON.stringify({
       text: content,
-      ...(mediaIds.length > 0
+      ...(mediaIds.length
         ? {
             media: {
               media_ids: mediaIds,
@@ -320,22 +336,25 @@ async function publishToTwitter({
     }),
   });
 
-  if (!response.ok) throw new Error("Failed to publish to Twitter");
-
   const responseText = await response.text();
-  let data: any = null;
-  try {
-    data = JSON.parse(responseText);
-  } catch (error) {
-    logger.error("Failed to parse Twitter response", { error, responseText });
-    data = null;
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to publish to Twitter: ${response.status} ${responseText}`,
+    );
   }
+
+  const data = JSON.parse(responseText);
 
   const postId = data?.data?.id;
 
-  if (!postId) throw new Error("Failed to get post ID from Twitter response");
+  if (!postId) {
+    throw new Error("Failed to get post ID from Twitter response");
+  }
 
-  return handle ? `https://x.com/${handle}/status/${postId}` : null;
+  return handle
+    ? `https://x.com/${handle}/status/${postId}`
+    : `https://x.com/i/web/status/${postId}`;
 }
 
 async function uploadImagesToTwitter({
@@ -399,6 +418,12 @@ async function uploadImagesToTwitter({
     }
 
     if (!uploadRes.ok) {
+      const errorData = JSON.parse(response);
+
+      if (errorData.title === "CreditsDepleted") {
+        throw new Error("TWITTER_CREDITS_DEPLETED");
+      }
+
       throw new Error(`Failed to upload media to Twitter: ${response}`);
     }
 

@@ -395,12 +395,11 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
                                 className={cn(
                                   "relative shrink-0 rounded-xl p-0 transition-all",
                                   !isConnected
-                                    ? "cursor-not-allowed"
+                                    ? "cursor-not-allowed grayscale!"
                                     : "cursor-pointer",
                                   selected
                                     ? "ring-2 ring-(--channel-color) ring-offset-1"
-                                    : // : "grayscale!",
-                                      "",
+                                    : "",
                                 )}
                                 onClick={() => {
                                   if (!isConnected) {

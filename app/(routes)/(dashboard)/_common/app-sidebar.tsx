@@ -85,7 +85,7 @@ const AppSidebar = () => {
   });
 
   const channels = (channelsData?.channels || []) as ChannelType[];
-  console.log("channels", channels);
+  // console.log("channels", channels);
   const unconnectedChannels = channels.filter(
     (channel: ChannelType) => !channel.connected,
   );
