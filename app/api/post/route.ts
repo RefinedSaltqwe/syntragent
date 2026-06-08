@@ -1,4 +1,5 @@
-import { POST_STATUS, POST_STATUSES } from "@/constants/post";
+import { POST_STATUS } from "@/constants/post";
+import { decrypt } from "@/lib/encryption";
 import { getInsforgeServerClient } from "@/lib/insforge-server";
 import { ImageObject } from "@/types/post.type";
 import { auth } from "@clerk/nextjs/server";
@@ -12,6 +13,50 @@ type PostType = {
 
 export async function GET(request: NextRequest) {
   try {
+    //?FOR TOKEN VALIDATION TESTING ONLY, DELETE THIS LATER
+    const token = decrypt(
+      "_BMzJa_-S7sjJF2O.mth2ggd0EkQWMdjgqVmuEg.tLMXKx1khs9-ZAdbKPJlEM98WixmT6DrTg0wbrHjGa-EpvfHU8zskVv_EmOO3tpngi4YQbXZnAwUPGEtIZGSdGRcvEfkoQgCgpmvgUm6O155-T40BynpwBJp8synqSwXy8Pyx69kMFlBquTJ6IWjLUIhfzSs-UkgrFmGQxHDivGL4D1vaWJleRoWHFNgZiAFurwQFMTvVAkCJzIJIot-3lSZypZrdVrXh5UITm58LvInonxsMXVnSuAHqDnurw2aaUNn1n51YK-MYqD847Ot_Jyp",
+    );
+    // const res = await fetch(
+    //   `https://graph.instagram.com/v24.0/26964117796615272?fields=id,username`,
+    //   // "https://graph.instagram.com/v24.0/me?fields=user_id,username",
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //     },
+    //   },
+    // );
+
+    // const mediaRes = await fetch(
+    //   `https://graph.instagram.com/v24.0/26964117796615272/media`,
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({
+    //       image_url:
+    //         "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+    //       caption: "Testing Instagram publish",
+    //     }),
+    //   },
+    // );
+    // const publishRes = await fetch(
+    //   "https://graph.instagram.com/v24.0/26964117796615272/media_publish",
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({
+    //       creation_id: "18199585894364512",
+    //     }),
+    //   },
+    // );
+
+    // console.log("TESTING", await publishRes.json());
     const { insforge, userId } = await getInsforgeServerClient();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

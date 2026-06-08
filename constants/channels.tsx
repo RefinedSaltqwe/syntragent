@@ -1,4 +1,13 @@
-import { InstagramIcon, NewTwitterIcon, FacebookIcon, TiktokIcon, ThreadsIcon, YoutubeIcon, LinkedinIcon, BlueskyIcon } from '@hugeicons/core-free-icons'
+import {
+  InstagramIcon,
+  NewTwitterIcon,
+  FacebookIcon,
+  TiktokIcon,
+  ThreadsIcon,
+  YoutubeIcon,
+  LinkedinIcon,
+  BlueskyIcon,
+} from "@hugeicons/core-free-icons";
 
 export enum ChannelTypeEnum {
   TWITTER = "TWITTER",
@@ -8,9 +17,10 @@ export enum ChannelTypeEnum {
   LINKEDIN = "LINKEDIN",
   BLUESKY = "BLUESKY",
   YOUTUBE = "YOUTUBE",
-  TIKTOK = "TIKTOK"
+  TIKTOK = "TIKTOK",
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const CHANNEL_TYPE_ICONS: Record<ChannelTypeEnum, any> = {
   [ChannelTypeEnum.TWITTER]: NewTwitterIcon,
   [ChannelTypeEnum.LINKEDIN]: LinkedinIcon,
@@ -20,7 +30,7 @@ export const CHANNEL_TYPE_ICONS: Record<ChannelTypeEnum, any> = {
   [ChannelTypeEnum.BLUESKY]: BlueskyIcon,
   [ChannelTypeEnum.YOUTUBE]: YoutubeIcon,
   [ChannelTypeEnum.TIKTOK]: TiktokIcon,
-}
+};
 
 export const CHANNEL_TYPE_URLS: Record<ChannelTypeEnum, string> = {
   [ChannelTypeEnum.TWITTER]: "https://x.com",
@@ -31,16 +41,14 @@ export const CHANNEL_TYPE_URLS: Record<ChannelTypeEnum, string> = {
   [ChannelTypeEnum.BLUESKY]: "https://bluesky.com",
   [ChannelTypeEnum.YOUTUBE]: "https://youtube.com",
   [ChannelTypeEnum.TIKTOK]: "https://tiktok.com",
-}
-
+};
 
 export function getChannelUrl(type: ChannelTypeEnum | undefined) {
-  if (!type) return ""
-  return CHANNEL_TYPE_URLS[type]
+  if (!type) return "";
+  return CHANNEL_TYPE_URLS[type];
 }
 
-
 export function getChannelIcon(type: ChannelTypeEnum | undefined) {
-  if (!type) return null
-  return CHANNEL_TYPE_ICONS[type]
+  if (!type) return null;
+  return CHANNEL_TYPE_ICONS[type];
 }

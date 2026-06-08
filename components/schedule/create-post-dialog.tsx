@@ -357,9 +357,9 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
             </div>
           </DialogHeader>
 
-          <div className="w-full flex flex-1 min-w-0 overflow-hidden h-[580px]">
+          <div className="w-full flex flex-1 min-w-0 overflow-hidden h-145">
             {/* Left — channel list */}
-            <div className="flex flex-1 flex-col min-w-0 w-[300px] pb-5">
+            <div className="flex flex-1 flex-col min-w-0 w-75 pb-5">
               <div className="channel--selector py-5  px-8">
                 {channels?.length > 0 && !isPending && (
                   <button
@@ -376,7 +376,7 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
                     ? Array.from({ length: 6 }).map((_, index) => (
                         <Skeleton
                           key={index}
-                          className="size-[50px] rounded-xl"
+                          className="size-12.5 rounded-xl"
                         />
                       ))
                     : channels?.map((channel) => {
@@ -399,7 +399,8 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
                                     : "cursor-pointer",
                                   selected
                                     ? "ring-2 ring-(--channel-color) ring-offset-1"
-                                    : "grayscale!",
+                                    : // : "grayscale!",
+                                      "",
                                 )}
                                 onClick={() => {
                                   if (!isConnected) {

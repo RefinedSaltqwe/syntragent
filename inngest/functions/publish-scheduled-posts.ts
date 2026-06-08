@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getInsforgeAdminClient } from "@/lib/insforge-server";
 import { inngest } from "../client";
 import { ImageObject, PostType } from "@/types/post.type";
@@ -96,12 +97,8 @@ export const publishScheduledPost = inngest.createFunction(
     }
 
     const userChannel = post.user_channels;
-    const metadata = post.user_channels?.provider_metadata as {
-      pageId?: string;
-      instagramBusinessId?: string;
-    } | null;
 
-    const instagramBusinessId = metadata?.instagramBusinessId;
+    const instagramAccountId = post.user_channels?.provider_account_id;
     if (!userChannel)
       return { skipped: true, reason: "user_channel_not_found" };
 
@@ -174,7 +171,7 @@ export const publishScheduledPost = inngest.createFunction(
         if (providerType === ChannelTypeEnum.INSTAGRAM) {
           return publishToInstagram({
             accessToken: currentAccessToken,
-            instagramBusinessId,
+            instagramAccountId: instagramAccountId!,
             caption: post.content,
             images: post.images,
             logger,
@@ -200,71 +197,88 @@ export const publishScheduledPost = inngest.createFunction(
 //? INSTAGRAM
 async function publishToInstagram({
   accessToken,
-  instagramBusinessId,
+  instagramAccountId,
   caption,
   images,
   logger,
 }: {
   accessToken: string;
-  instagramBusinessId?: string;
+  instagramAccountId: string;
   caption: string;
   images?: ImageObject[];
   logger: any;
 }) {
-  if (!instagramBusinessId) {
-    throw new Error("Missing Instagram Business Account ID");
-  }
-
   const imageUrl = images?.[0]?.url;
 
   if (!imageUrl) {
     throw new Error("Instagram requires at least one image");
   }
 
-  // Create media container
+  // Step 1: Create media container
   const mediaRes = await fetch(
-    `https://graph.facebook.com/v23.0/${instagramBusinessId}/media`,
+    `https://graph.instagram.com/v24.0/${instagramAccountId}/media`,
     {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         image_url: imageUrl,
         caption,
-        access_token: accessToken,
       }),
     },
   );
 
   const media = await mediaRes.json();
 
+  logger.info("Instagram media response", media);
+
   if (!media.id) {
-    throw new Error("Failed to create Instagram media container");
+    throw new Error(JSON.stringify(media));
   }
 
-  // Publish
+  // Instagram sometimes needs a few seconds
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  // Step 2: Publish media
   const publishRes = await fetch(
-    `https://graph.facebook.com/v23.0/${instagramBusinessId}/media_publish`,
+    `https://graph.instagram.com/v24.0/${instagramAccountId}/media_publish`,
     {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         creation_id: media.id,
-        access_token: accessToken,
       }),
     },
   );
 
   const publish = await publishRes.json();
 
+  logger.info("Instagram publish response", publish);
+
   if (!publish.id) {
-    throw new Error("Failed to publish Instagram post");
+    throw new Error(JSON.stringify(publish));
   }
 
-  return `https://www.instagram.com/p/${publish.id}`;
+  // Step 3: Get permalink
+  const permalinkRes = await fetch(
+    `https://graph.instagram.com/v24.0/${publish.id}?fields=permalink`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  const permalink = await permalinkRes.json();
+
+  logger.info("Instagram permalink response", permalink);
+
+  return permalink.permalink ?? publish.id;
 }
 //? TWITTER
 async function publishToTwitter({
