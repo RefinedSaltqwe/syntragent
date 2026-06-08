@@ -18,7 +18,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
     name: "Publish Scheduled Posts",
     triggers: [
       {
-        cron: "*/10 * * * *",
+        cron: "*/5 * * * *",
       },
     ],
   },

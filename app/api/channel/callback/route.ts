@@ -124,6 +124,12 @@ export async function GET(request: NextRequest) {
       codeVerifier,
     });
 
+    console.log("INSTAGRAM TOKEN OBJECT", {
+      accessToken: !!token.accessToken,
+      refreshToken: !!token.refreshToken,
+      expiresAt: token.expiresAt,
+    });
+
     // 6. Fetch connected account profile
     const profile = await provider.getProfile({
       accessToken: token.accessToken,

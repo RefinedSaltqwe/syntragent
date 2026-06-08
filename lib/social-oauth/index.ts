@@ -132,6 +132,11 @@ function createProvider(
 
       const data = await requestToken(type, params);
 
+      console.log("LOgger", {
+        provider: type,
+        tokenResponse: data,
+      });
+
       const seconds = Number(data.expires_in);
       const expiresAt =
         seconds > 0
