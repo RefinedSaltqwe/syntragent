@@ -126,18 +126,60 @@ function createProvider(
       if (!opts.pkce) {
         params.append("client_secret", getConfig(type).clientSecret);
       }
+
       if (codeVerifier) {
         params.append("code_verifier", codeVerifier);
       }
 
       const data = await requestToken(type, params);
 
-      console.log("LOgger", {
+      console.log("OAuth token response", {
         provider: type,
         tokenResponse: data,
       });
 
+      // Instagram Login API:
+      // Exchange short-lived token for long-lived token.
+      if (type === ChannelTypeEnum.INSTAGRAM) {
+        const config = getConfig(type);
+
+        const longLivedResponse = await fetch(
+          `https://graph.instagram.com/access_token?${new URLSearchParams({
+            grant_type: "ig_exchange_token",
+            client_secret: config.clientSecret,
+            access_token: data.access_token,
+          }).toString()}`,
+        );
+
+        const longLivedData = await longLivedResponse.json();
+
+        console.log("Instagram long-lived token response", longLivedData);
+
+        if (!longLivedResponse.ok || !longLivedData.access_token) {
+          throw new Error(
+            `Instagram long-lived token exchange failed: ${JSON.stringify(
+              longLivedData,
+            )}`,
+          );
+        }
+
+        const expiresAt =
+          Number(longLivedData.expires_in) > 0
+            ? new Date(
+                Date.now() + Number(longLivedData.expires_in) * 1000,
+              ).toISOString()
+            : null;
+
+        return {
+          accessToken: longLivedData.access_token,
+          refreshToken: null,
+          expiresAt,
+        };
+      }
+
+      // Standard OAuth providers
       const seconds = Number(data.expires_in);
+
       const expiresAt =
         seconds > 0
           ? new Date(Date.now() + seconds * 1000).toISOString()
