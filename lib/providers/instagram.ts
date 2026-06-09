@@ -21,7 +21,7 @@ export async function requestLongLivedToken(secret: string, token: string) {
 
   const expiresAt =
     Number(longLivedData.expires_in) > 0
-      ? new Date(Date.now() + Number() * 1000).toISOString()
+      ? new Date(Date.now() + Number(longLivedData.expires_in) * 1000)
       : null;
 
   return {

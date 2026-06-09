@@ -136,18 +136,18 @@ function createProvider(
 
       const data = await requestToken(type, params);
 
-      if (type === ChannelTypeEnum.INSTAGRAM) {
-        const { longLivedToken, expiresAt } = await requestLongLivedToken(
-          config.clientSecret,
-          data.access_token,
-        );
+      // if (type === ChannelTypeEnum.INSTAGRAM) {
+      //   const { longLivedToken, expiresAt } = await requestLongLivedToken(
+      //     config.clientSecret,
+      //     data.access_token,
+      //   );
 
-        return {
-          accessToken: longLivedToken,
-          refreshToken: null,
-          expiresAt,
-        };
-      }
+      //   return {
+      //     accessToken: longLivedToken,
+      //     refreshToken: null,
+      //     expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      //   };
+      // }
 
       return {
         accessToken: data.access_token,

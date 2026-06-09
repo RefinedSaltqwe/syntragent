@@ -7,16 +7,20 @@ integrations, and intelligent automation.
 
 ## 🌟 Overview
 
-**Syntragent AI** is a modern workflow automation platform that enables
-businesses to automate repetitive processes using AI, integrations, and visual
-workflows.
+**Syntragent AI** is an AI-powered social media management platform designed to
+help creators, businesses, and marketing teams plan, create, organize, and
+schedule content from a single workspace.
 
-Create powerful automations, connect external services, trigger actions from
-events, and manage everything from a single dashboard.
+Generate content ideas with AI, manage your content pipeline using a Kanban
+board, organize campaigns, and schedule posts across multiple social media
+platforms.
 
-Whether you're automating content creation, social media workflows, customer
-engagement, lead generation, or internal operations, Syntragent AI helps teams
-move faster with less manual work.
+From brainstorming ideas to publishing content, Syntragent AI streamlines your
+entire content workflow so you can spend less time managing social media and
+more time creating.
+
+Whether you're a creator, agency, startup, or business, Syntragent AI helps you
+stay consistent, organized, and productive.
 
 ---
 
