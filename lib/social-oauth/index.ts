@@ -136,25 +136,25 @@ function createProvider(
 
       const data = await requestToken(type, params);
 
-      if (type === ChannelTypeEnum.INSTAGRAM) {
-        const { longLivedToken, expiresAt } = await requestLongLivedToken(
-          config.clientSecret,
-          data.access_token,
-        );
+      // if (type === ChannelTypeEnum.INSTAGRAM) {
+      //   const { longLivedToken, expiresAt } = await requestLongLivedToken(
+      //     config.clientSecret,
+      //     data.access_token,
+      //   );
 
-        console.log("Instagram short-lived token", {
-          accessToken: data.access_token?.slice(0, 20),
-          userId: data.user_id,
-          permissions: data.permissions,
-          longLivedToken,
-        });
+      //   console.log("Instagram short-lived token", {
+      //     accessToken: data.access_token?.slice(0, 20),
+      //     userId: data.user_id,
+      //     permissions: data.permissions,
+      //     longLivedToken,
+      //   });
 
-        return {
-          accessToken: longLivedToken,
-          refreshToken: null,
-          expiresAt: expiresAt ? expiresAt.toISOString() : null,
-        };
-      }
+      //   return {
+      //     accessToken: longLivedToken,
+      //     refreshToken: null,
+      //     expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      //   };
+      // }
 
       return {
         accessToken: data.access_token,
