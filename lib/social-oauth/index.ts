@@ -142,6 +142,13 @@ function createProvider(
           data.access_token,
         );
 
+        console.log("Instagram short-lived token", {
+          accessToken: data.access_token?.slice(0, 20),
+          userId: data.user_id,
+          permissions: data.permissions,
+          longLivedToken,
+        });
+
         return {
           accessToken: longLivedToken,
           refreshToken: null,
