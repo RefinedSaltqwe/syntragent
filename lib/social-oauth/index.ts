@@ -149,7 +149,7 @@ function createProvider(
         // longLivedToken,
       });
       console.log(
-        `https://graph.instagram.com/me?fields=id,username&access_token=${data.accessToken}`,
+        `https://graph.instagram.com/me?fields=id,username&access_token=${data.access_token}`,
       );
 
       //   return {
@@ -202,6 +202,10 @@ function createProvider(
     },
     getProfile: async ({ accessToken }) => {
       const config = getConfig(type);
+      console.log("GET PROFILE TOKEN", {
+        exists: !!accessToken,
+        token: accessToken?.slice(0, 20),
+      });
 
       /**
        * Instagram Login API uses a dedicated profile endpoint
