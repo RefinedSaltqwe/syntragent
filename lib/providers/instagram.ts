@@ -9,7 +9,7 @@ export async function requestLongLivedToken(secret: string, token: string) {
 
   const longLivedData = await longLivedResponse.json();
 
-  console.log("Instagram long-lived token response", longLivedData);
+  // console.log("Instagram long-lived token response", longLivedData);
 
   if (!longLivedResponse.ok || !longLivedData.access_token) {
     throw new Error(

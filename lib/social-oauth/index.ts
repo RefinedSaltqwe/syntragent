@@ -142,12 +142,12 @@ function createProvider(
           data.access_token,
         );
 
-        console.log("Instagram short-lived token", {
-          accessToken: data.access_token,
-          userId: data.user_id,
-          permissions: data.permissions,
-          longLivedToken: longLivedToken,
-        });
+        // console.log("Instagram short-lived token", {
+        //   accessToken: data.access_token,
+        //   userId: data.user_id,
+        //   permissions: data.permissions,
+        //   longLivedToken: longLivedToken,
+        // });
 
         return {
           accessToken: longLivedToken,
