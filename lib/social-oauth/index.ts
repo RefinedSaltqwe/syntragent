@@ -143,11 +143,14 @@ function createProvider(
       //   );
 
       console.log("Instagram short-lived token", {
-        accessToken: data.access_token?.slice(0, 20),
+        accessToken: data.access_token,
         userId: data.user_id,
         permissions: data.permissions,
         // longLivedToken,
       });
+      console.log(
+        `https://graph.instagram.com/me?fields=id,username&access_token=${data.accessToken}`,
+      );
 
       //   return {
       //     accessToken: longLivedToken,
