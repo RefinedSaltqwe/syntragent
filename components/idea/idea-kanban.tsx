@@ -11,7 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontal, Plus } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -34,6 +34,7 @@ type Column = {
 
 const IdeaKanban = () => {
   const queryClient = useQueryClient();
+  const initialized = useRef(false);
   const [columns, setColumns] = useState<Column[]>([]);
   const [showIdeaDialog, setShowIdeaDialog] = useState<boolean>(false);
   const [selectedIdea, setSelectedIdea] = useState<IdeaType | null>(null);
@@ -49,9 +50,9 @@ const IdeaKanban = () => {
   });
 
   useEffect(() => {
-    if (ideaData?.groups) {
-      setColumns(ideaData.groups);
-    }
+    if (!ideaData?.groups || initialized.current) return;
+    initialized.current = true;
+    setColumns(ideaData.groups);
   }, [ideaData]);
 
   const saveIdeaMutation = useMutation({
@@ -388,7 +389,7 @@ p-2 px-3 transition-colors min-h-0`,
                                                 </h4>
                                               </div>
                                               <DropdownMenu>
-                                                <DropdownMenuTrigger>
+                                                <DropdownMenuTrigger asChild>
                                                   <Button
                                                     size="icon"
                                                     variant="ghost"

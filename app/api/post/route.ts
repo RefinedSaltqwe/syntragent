@@ -1,22 +1,14 @@
 import { POST_STATUS } from "@/constants/post";
-import { decrypt } from "@/lib/encryption";
 import { getInsforgeServerClient } from "@/lib/insforge-server";
-import { ImageObject } from "@/types/post.type";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-
-type PostType = {
-  channelTypeId: string;
-  content: string;
-  images?: ImageObject[];
-};
 
 export async function GET(request: NextRequest) {
   try {
     //?FOR TOKEN VALIDATION TESTING ONLY, DELETE THIS LATER
-    const token = decrypt(
-      "_BMzJa_-S7sjJF2O.mth2ggd0EkQWMdjgqVmuEg.tLMXKx1khs9-ZAdbKPJlEM98WixmT6DrTg0wbrHjGa-EpvfHU8zskVv_EmOO3tpngi4YQbXZnAwUPGEtIZGSdGRcvEfkoQgCgpmvgUm6O155-T40BynpwBJp8synqSwXy8Pyx69kMFlBquTJ6IWjLUIhfzSs-UkgrFmGQxHDivGL4D1vaWJleRoWHFNgZiAFurwQFMTvVAkCJzIJIot-3lSZypZrdVrXh5UITm58LvInonxsMXVnSuAHqDnurw2aaUNn1n51YK-MYqD847Ot_Jyp",
-    );
+    // const token = decrypt(
+    //   "_BMzJa_-S7sjJF2O.mth2ggd0EkQWMdjgqVmuEg.tLMXKx1khs9-ZAdbKPJlEM98WixmT6DrTg0wbrHjGa-EpvfHU8zskVv_EmOO3tpngi4YQbXZnAwUPGEtIZGSdGRcvEfkoQgCgpmvgUm6O155-T40BynpwBJp8synqSwXy8Pyx69kMFlBquTJ6IWjLUIhfzSs-UkgrFmGQxHDivGL4D1vaWJleRoWHFNgZiAFurwQFMTvVAkCJzIJIot-3lSZypZrdVrXh5UITm58LvInonxsMXVnSuAHqDnurw2aaUNn1n51YK-MYqD847Ot_Jyp",
+    // );
     // const res = await fetch(
     //   `https://graph.instagram.com/v24.0/26964117796615272?fields=id,username`,
     //   // "https://graph.instagram.com/v24.0/me?fields=user_id,username",

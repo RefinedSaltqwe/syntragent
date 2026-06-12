@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChannelIcon } from "@/constants/channels";
 import { PostType } from "@/types/post.type";
+import type { DateLocalizer, ToolbarProps } from "react-big-calendar";
 
 const locales = { "en-US": enUS };
 const localizer = dateFnsLocalizer({
@@ -31,6 +32,17 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
+
+type CalendarEvent = PostType & {
+  title: string;
+  start: Date;
+  end: Date;
+};
+
+type DateHeaderProps = {
+  label: string;
+  date: Date;
+};
 
 interface PostCalendarProps {
   posts: PostType[];
@@ -70,18 +82,21 @@ export function PostCalendar({
 
   const formats = React.useMemo(
     () => ({
-      weekdayFormat: (date: Date, culture?: string, localizer?: any) =>
-        localizer.format(date, "EEEE", culture),
+      weekdayFormat: (
+        date: Date,
+        culture?: string,
+        localizer?: DateLocalizer,
+      ) => localizer!.format(date, "EEEE", culture),
 
-      dayFormat: (date: Date, culture?: string, localizer?: any) =>
-        localizer.format(date, "EEEE d", culture),
+      dayFormat: (date: Date, culture?: string, localizer?: DateLocalizer) =>
+        localizer!.format(date, "EEEE d", culture),
     }),
     [],
   );
 
   const isWeekView = view === "week";
 
-  const CustomToolbar = (toolbar: any) => {
+  const CustomToolbar = (toolbar: ToolbarProps<CalendarEvent, object>) => {
     return (
       <div className="flex flex-col gap-4 mb-4">
         <div className="flex items-center justify-between">
@@ -150,7 +165,7 @@ export function PostCalendar({
         onNavigate={onDateChange}
         view={view === "month" ? Views.MONTH : Views.WEEK}
         onView={(v) => onViewChange(v === Views.MONTH ? "month" : "week")}
-        onSelectEvent={(event: any) => onPostClick(event)}
+        onSelectEvent={(event: CalendarEvent) => onPostClick(event)}
         //onSelectSlot={({ start }) => onCreatePost(start)}
 
         // In week view, disable past time slots
@@ -215,7 +230,7 @@ export function PostCalendar({
           },
 
           month: {
-            dateHeader: ({ label, date: cellDate }: any) => {
+            dateHeader: ({ label, date: cellDate }: DateHeaderProps) => {
               const isCellToday =
                 format(cellDate, "yyyy-MM-dd") ===
                 format(new Date(), "yyyy-MM-dd");

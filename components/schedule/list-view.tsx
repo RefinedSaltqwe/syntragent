@@ -1,46 +1,68 @@
-import { PostType } from "@/types/post.type";
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useQueryState } from "nuqs";
-import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { Badge } from "../ui/badge";
-import ScheduleToolbar from "./schedule-toolbar";
-import { Skeleton } from "../ui/skeleton";
-import { AlarmClockCheck, ExternalLink, LayoutList, Pin, Plus, Send } from "lucide-react";
-import { Button } from "../ui/button";
-import { format, formatDistanceToNow, isPast, parseISO } from "date-fns";
-import { Card, CardContent, CardFooter } from "../ui/card";
-import ChannelAvatar from "../channel-avatar";
-import { EditPostDialog } from "./edit-post-dialog";
-import { toast } from "sonner";
-import { Spinner } from "../ui/spinner";
+import { useConfirmationDialog } from "@/hooks/store/use-dialog";
 import { cn } from "@/lib/utils";
+import { PostType } from "@/types/post.type";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { format, formatDistanceToNow, isPast, parseISO } from "date-fns";
+import {
+  AlarmClockCheck,
+  ExternalLink,
+  LayoutList,
+  Pin,
+  Plus,
+  Send,
+  Trash,
+} from "lucide-react";
+import Image from "next/image";
+import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import ChannelAvatar from "../channel-avatar";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
+import { Spinner } from "../ui/spinner";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { EditPostDialog } from "./edit-post-dialog";
+import ScheduleToolbar from "./schedule-toolbar";
 
 type TabType = "draft" | "queue" | "published" | "failed";
 
 type GroupPostType = {
   key: string;
   label: string;
-  posts: PostType[]
-}
+  posts: PostType[];
+};
 
-const ListView = ({ setCreatePostModalOpen }: {
-  setCreatePostModalOpen: (open: boolean) => void
+const ListView = ({
+  setCreatePostModalOpen,
+}: {
+  setCreatePostModalOpen: (open: boolean) => void;
 }) => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const onOpen = useConfirmationDialog((state) => state.onOpen);
+  const setTitle = useConfirmationDialog((state) => state.setTitle);
+  const setDescription = useConfirmationDialog((state) => state.setDescription);
+  const proceed = useConfirmationDialog((state) => state.proceed);
+  const setProceed = useConfirmationDialog((state) => state.onIsProceed);
+  const setPostId = useConfirmationDialog((state) => state.setPostId);
+  const postId = useConfirmationDialog((state) => state.postId);
+  const setPending = useConfirmationDialog((state) => state.setPending);
+
   const [activeTab, setActiveTab] = useQueryState("status", {
-    defaultValue: "draft"
-  })
+    defaultValue: "draft",
+  });
   const [channelIds, setChannelIds] = useQueryState("channelIds", {
     defaultValue: [],
     parse: (query) => query.split(","),
-    serialize: (value) => value.join(",")
-  })
+    serialize: (value) => value.join(","),
+  });
 
-  const [selectedPostForEdit, setSelectedPostForEdit] = useState<PostType | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedPostForEdit, setSelectedPostForEdit] =
+    useState<PostType | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-    // const { data, isFetching:isPending } = useQuery({
+  // const { data, isFetching:isPending } = useQuery({
   //   queryKey: ["posts", activeTab, channelIds],
   //   queryFn: async () => {
   //     const params = new URLSearchParams()
@@ -69,95 +91,144 @@ const ListView = ({ setCreatePostModalOpen }: {
       {
         queryKey: ["posts", activeTab, channelIds],
         queryFn: async () => {
-          const params = new URLSearchParams()
-          params.append("group_by_date", "true")
-          if (activeTab) params.append("status", activeTab)
-          if (channelIds.length > 0) params.append("channelIds", channelIds.join(","))
-          const res = await fetch(`/api/post?${params.toString()}`)
-          if (!res.ok) throw new Error("Failed to fetch posts")
-          return res.json()
+          const params = new URLSearchParams();
+          params.append("group_by_date", "true");
+          if (activeTab) params.append("status", activeTab);
+          if (channelIds.length > 0)
+            params.append("channelIds", channelIds.join(","));
+          const res = await fetch(`/api/post?${params.toString()}`);
+          if (!res.ok) throw new Error("Failed to fetch posts");
+          return res.json();
         },
       },
       {
         queryKey: ["posts", "totals", channelIds],
         queryFn: async () => {
-          const params = new URLSearchParams()
-          if (channelIds.length > 0) params.append("channelIds", channelIds.join(","))
-          const res = await fetch(`/api/post/totals?${params.toString()}`)
-          if (!res.ok) throw new Error("Failed to fetch totals")
-          return res.json()
+          const params = new URLSearchParams();
+          if (channelIds.length > 0)
+            params.append("channelIds", channelIds.join(","));
+          const res = await fetch(`/api/post/totals?${params.toString()}`);
+          if (!res.ok) throw new Error("Failed to fetch totals");
+          return res.json();
         },
       },
     ],
-  })
+  });
 
-  const data = postsQuery.data
-  const isPending = postsQuery.isFetching
-  const totalPosts = totalsQuery.data
-  const isTotalsFetching = totalsQuery.isFetching
-
-
+  const data = postsQuery.data;
+  const isPending = postsQuery.isFetching;
+  const totalPosts = totalsQuery.data;
+  const isTotalsFetching = totalsQuery.isFetching;
 
   const publishPostMutation = useMutation({
     mutationFn: async (postId: string) => {
       const res = await fetch(`/api/post/${postId}/publish`, {
-        method: "POST"
-      })
+        method: "POST",
+      });
       if (!res.ok) throw new Error("Failed to publish post");
       return res.json();
     },
     onSuccess: () => {
-      toast.success("Post processing...")
+      toast.success("Post processing...");
       queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === "posts",
       });
-    }
-  })
+    },
+  });
 
-  const groupPosts = (data?.groupPosts || []) as GroupPostType[]
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await fetch(`/api/post/${postId}/delete`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete post");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Post deleted successfully");
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "posts",
+      });
+    },
+    onError: (error: { message: string }) => {
+      toast.error(error.message || "Failed to delete post");
+    },
+    onSettled: () => {
+      setPending(false);
+      setTitle("");
+      setDescription("");
+      onOpen(false);
+    },
+  });
 
-  const totalDrafts = totalPosts?.totalDrafts || 0
-  const totalQueue = totalPosts?.totalQueue || 0
-  const totalPublished = totalPosts?.totalPublished || 0
-  const totalFailed = totalPosts?.totalFailed || 0
+  const groupPosts = (data?.groupPosts || []) as GroupPostType[];
+
+  const totalDrafts = totalPosts?.totalDrafts || 0;
+  const totalQueue = totalPosts?.totalQueue || 0;
+  const totalPublished = totalPosts?.totalPublished || 0;
+  const totalFailed = totalPosts?.totalFailed || 0;
 
   const renderTotalBadge = (total: number) => (
     <Badge variant="secondary" className="min-w-6">
       {isTotalsFetching ? <Spinner className="size-3" /> : total}
     </Badge>
-  )
+  );
 
   const toggleChannel = (channelId: string) => {
     setChannelIds((prev) => {
       if (!prev) {
-        return [channelId]
+        return [channelId];
       }
       if (prev.includes(channelId)) {
-        const filtered = prev.filter((id) => id !== channelId)
-        return filtered.length === 0 ? null : filtered
+        const filtered = prev.filter((id) => id !== channelId);
+        return filtered.length === 0 ? null : filtered;
       }
-      return [...prev, channelId]
-    })
-  }
+      return [...prev, channelId];
+    });
+  };
 
   const handleEditPost = (post: PostType) => {
-    setSelectedPostForEdit(post)
-    setIsEditDialogOpen(true)
-  }
+    setSelectedPostForEdit(post);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeletePost = (post: PostType) => {
+    if (deletePostMutation.isPending) return;
+
+    setPostId(post.id);
+    onOpen(true);
+    setTitle("Delete Post");
+    setDescription(
+      "Are you sure you want to delete this post? This action cannot be undone.",
+    );
+  };
+
+  useEffect(() => {
+    if (proceed && postId.length > 0) {
+      const id = postId;
+
+      setPending(true);
+      setProceed(false);
+      setPostId("");
+
+      deletePostMutation.mutate(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proceed, postId]);
 
   const handlePublishNow = (post: PostType) => {
     if (publishPostMutation.isPending) return;
-    publishPostMutation.mutate(
-      post.id
-    )
-  }
-
+    publishPostMutation.mutate(post.id);
+  };
 
   return (
     <>
       <div className="flecx flex-col h-full pt-3">
         <div className="flex items-center justify-between border-b px-6">
-          <Tabs value={activeTab || "draft"} onValueChange={(val) => setActiveTab(val)}>
+          <Tabs
+            value={activeTab || "draft"}
+            onValueChange={(val) => setActiveTab(val)}
+          >
             <TabsList variant="line" className="space-x-4">
               <TabsTrigger value="draft">
                 Draft {renderTotalBadge(totalDrafts)}
@@ -183,13 +254,13 @@ const ListView = ({ setCreatePostModalOpen }: {
         </div>
 
         <div className="flex-1 p-6">
-          <div className="max-w-[900px] mx-auto w-full space-y-2">
+          <div className="max-w-225 mx-auto w-full space-y-2">
             {isPending ? (
               <div className="space-y-8">
                 {Array.from({ length: 2 }).map((_, index) => (
                   <div key={index} className="space-y-2">
                     <Skeleton className="h-10 w-56 rounded-md" />
-                    <Skeleton className="h-[200px] w-full" />
+                    <Skeleton className="h-50 w-full" />
                   </div>
                 ))}
               </div>
@@ -200,12 +271,15 @@ const ListView = ({ setCreatePostModalOpen }: {
                     <LayoutList className="size-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-semibold capitalize">
-                    No {activeTab === "queue" ? "scheduled" : activeTab} posts yet
+                    No {activeTab === "queue" ? "scheduled" : activeTab} posts
+                    yet
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Connect a channel and create your first post to get started with scheduling.
+                    Connect a channel and create your first post to get started
+                    with scheduling.
                   </p>
-                  <Button size="lg"
+                  <Button
+                    size="lg"
                     onClick={() => setCreatePostModalOpen(true)}
                   >
                     <Plus className="size-4" />
@@ -224,25 +298,32 @@ const ListView = ({ setCreatePostModalOpen }: {
                         const channel = post.user_channels?.channel_types;
                         const previewImage = post.images?.[0]?.url;
                         return (
-                          <div key={post.id} className="grid gap-2 
-                        lg:grid-cols-[120px_minmax(0,1fr)]">
+                          <div
+                            key={post.id}
+                            className="grid gap-2 
+                        lg:grid-cols-[120px_minmax(0,1fr)]"
+                          >
                             <div>
-                              <h5>
-                                {format(scheduleDate, "h:mm a")}
-                              </h5>
+                              <h5>{format(scheduleDate, "h:mm a")}</h5>
                               {/* <div className="flex items-center gap-2 text-muted-foreground">
                                 <Pin className="size-4" />
                                 <span>{post.status === "draft" ? "Draft" : "Custom"}</span>
                               </div> */}
-                              <div className={cn(
-                                "flex items-center gap-2",
-                                isPast(scheduleDate) && (post.status === "queue" || post.status === "draft")
-                                  ? "text-destructive"
-                                  : "text-muted-foreground"
-                              )}>
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2",
+                                  isPast(scheduleDate) &&
+                                    (post.status === "queue" ||
+                                      post.status === "draft")
+                                    ? "text-destructive"
+                                    : "text-muted-foreground",
+                                )}
+                              >
                                 <Pin className="size-4" />
                                 <span className="capitalize">
-                                  {isPast(scheduleDate) && (post.status === "queue" || post.status === "draft")
+                                  {isPast(scheduleDate) &&
+                                  (post.status === "queue" ||
+                                    post.status === "draft")
                                     ? "Overdue"
                                     : post.status === "draft"
                                       ? "Draft"
@@ -252,30 +333,46 @@ const ListView = ({ setCreatePostModalOpen }: {
                             </div>
 
                             <Card className="py-0 gap-0">
-                              <CardContent className="grid gap-6 p-5
-                            md:grid-cols-[minmax(0,1fr)_250px]">
+                              <CardContent
+                                className="grid gap-6 p-5
+                            md:grid-cols-[minmax(0,1fr)_250px]"
+                              >
                                 <div className="space-y-5">
                                   {channel ? (
                                     <ChannelAvatar
                                       type={channel.type}
                                       color={channel.color}
-                                      profileImage={post.user_channels?.profile_image}
-                                      name={post.user_channels?.handle || channel.name}
+                                      profileImage={
+                                        post.user_channels?.profile_image
+                                      }
+                                      name={
+                                        post.user_channels?.handle ||
+                                        channel.name
+                                      }
                                     />
                                   ) : null}
 
-                                  <p className="whitespace-pre-wrap text-sm leading-6
+                                  <p
+                                    className="whitespace-pre-wrap text-sm leading-6
                                 line-clamp-4
-                                ">{post.content}</p>
+                                "
+                                  >
+                                    {post.content}
+                                  </p>
                                 </div>
 
-                                <div className="max-h-[165px] overflow-hidden rounded-2xl
-                  border bg-muted/40">
+                                <div
+                                  className="max-h-41.25 overflow-hidden rounded-2xl
+                  border bg-muted/40"
+                                >
                                   {previewImage ? (
-                                    <img
+                                    <Image
                                       src={previewImage}
                                       alt="Post media"
                                       className="h-full w-full object-cover"
+                                      sizes="(max-width: 768px) 100vw, 250px"
+                                      height={250}
+                                      width={250}
                                     />
                                   ) : (
                                     <div className="flex h-full-center justify-center text-sm text-muted-foreground">
@@ -285,25 +382,35 @@ const ListView = ({ setCreatePostModalOpen }: {
                                 </div>
                               </CardContent>
 
-                              <CardFooter className="flex flex-col gap-4 border-t px-6 py-3
+                              <CardFooter
+                                className="flex flex-col gap-4 border-t px-6 py-3
                           md:flex-row md:items-center md:justify-between
-                          ">
+                          "
+                              >
                                 <p className="text-sm text-muted-foreground">
                                   {post.status === "published" ? (
                                     <>
-                                      Published via <span className="font-medium text-foreground">{channel?.name || "Channel"}</span>
+                                      Published via{" "}
+                                      <span className="font-medium text-foreground">
+                                        {channel?.name || "Channel"}
+                                      </span>
                                     </>
                                   ) : (
                                     <>
-                                      You created this <span className="font-medium text-foreground">
-                                        {formatDistanceToNow(parseISO(post.created_at))}
-                                      </span> ago
+                                      You created this{" "}
+                                      <span className="font-medium text-foreground">
+                                        {formatDistanceToNow(
+                                          parseISO(post.created_at),
+                                        )}
+                                      </span>{" "}
+                                      ago
                                     </>
                                   )}
                                 </p>
 
                                 <div className="flex items-center gap-3">
-                                  {post.published_url && post.status === "published" ? (
+                                  {post.published_url &&
+                                  post.status === "published" ? (
                                     <Button asChild variant="outline">
                                       <a
                                         href={post.published_url}
@@ -316,16 +423,27 @@ const ListView = ({ setCreatePostModalOpen }: {
                                     </Button>
                                   ) : (
                                     <>
-                                      <Button variant="outline"
+                                      <Button
+                                        variant="outline"
                                         onClick={() => handleEditPost(post)}
                                       >
                                         <AlarmClockCheck className="size-4" />
                                         Reschedule
                                       </Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => handleDeletePost(post)}
+                                      >
+                                        <Trash className="size-4" />
+                                        Delete
+                                      </Button>
 
                                       {post.status === "draft" && (
-                                        <Button variant="outline"
-                                          disabled={publishPostMutation.isPending}
+                                        <Button
+                                          variant="outline"
+                                          disabled={
+                                            publishPostMutation.isPending
+                                          }
                                           onClick={() => handlePublishNow(post)}
                                         >
                                           {publishPostMutation.isPending ? (
@@ -341,9 +459,8 @@ const ListView = ({ setCreatePostModalOpen }: {
                                 </div>
                               </CardFooter>
                             </Card>
-
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   </div>
@@ -357,22 +474,28 @@ const ListView = ({ setCreatePostModalOpen }: {
       <EditPostDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        post={selectedPostForEdit ? {
-          id: selectedPostForEdit.id,
-          content: selectedPostForEdit.content,
-          images: selectedPostForEdit.images || [],
-          scheduledDate: selectedPostForEdit.scheduled_at,
-          userChannelId: selectedPostForEdit.user_channel_id || "",
-          channel: selectedPostForEdit.user_channels?.channel_types ? {
-            ...selectedPostForEdit.user_channels.channel_types,
-            profile_image: selectedPostForEdit.user_channels.profile_image,
-            handle: selectedPostForEdit.user_channels.handle
-          } : null,
-        } : null}
+        post={
+          selectedPostForEdit
+            ? {
+                id: selectedPostForEdit.id,
+                content: selectedPostForEdit.content,
+                images: selectedPostForEdit.images || [],
+                scheduledDate: selectedPostForEdit.scheduled_at,
+                userChannelId: selectedPostForEdit.user_channel_id || "",
+                channel: selectedPostForEdit.user_channels?.channel_types
+                  ? {
+                      ...selectedPostForEdit.user_channels.channel_types,
+                      profile_image:
+                        selectedPostForEdit.user_channels.profile_image,
+                      handle: selectedPostForEdit.user_channels.handle,
+                    }
+                  : null,
+              }
+            : null
+        }
       />
-
     </>
-  )
-}
+  );
+};
 
-export default ListView
+export default ListView;

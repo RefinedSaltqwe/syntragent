@@ -1,24 +1,17 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
-import { format, parse, set } from "date-fns";
-import { getChannelIcon } from "@/constants/channels";
-import { ChannelType } from "@/types/channel.type";
-import { ImageObject } from "@/types/post.type";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { ChannelTypeEnum, getChannelIcon } from "@/constants/channels";
+import { POST_STATUS, PostStatus } from "@/constants/post";
 import { cn } from "@/lib/utils";
+import { ChannelType } from "@/types/channel.type";
+import { IdeaType } from "@/types/idea.type";
+import { ImageObject } from "@/types/post.type";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { parse, set } from "date-fns";
 import { AlertTriangle, Lightbulb, ScanEye, Wand2 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import Link from "next/link";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { toggleVariants } from "../ui/toggle";
 import ChannelAvatar from "../channel-avatar";
 import ContentTextarea from "../content-textarea";
 import {
@@ -27,20 +20,33 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../ui/accordion";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "../ui/button";
+import { ButtonGroup } from "../ui/button-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Skeleton } from "../ui/skeleton";
+import { Spinner } from "../ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { AIAssistant } from "./ai-assitant";
 import IdeasList from "./ideas-list";
 import PreviewPanel from "./preview";
-import { ButtonGroup } from "../ui/button-group";
-import { POST_STATUS, PostStatus } from "@/constants/post";
 import { ScheduleDatePicker } from "./schedule-date-picker";
-import Link from "next/link";
-import { Spinner } from "../ui/spinner";
-import { AIAssistant } from "./ai-assitant";
 
 type PropsType = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate?: Date | null;
+};
+
+type PostType = {
+  channelTypeId: string;
+  content: string;
+  images?: ImageObject[];
 };
 
 type ChannelContent = {
@@ -70,7 +76,17 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
     useState<ActionTabType | null>(null);
   const [activePreview, setActivePreview] = useState<string>("");
   const [activeAccordion, setActiveAccordion] = useState<string>("");
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(
+    selectedDate ?? new Date(),
+  );
+
+  useEffect(() => {
+    if (selectedDate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDate(selectedDate);
+    }
+  }, [selectedDate]);
+
   const [timeSlot, setTimeSlot] = useState<string>("");
 
   const { data, isPending } = useQuery({
@@ -89,26 +105,32 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
     if (isPending) {
       return [];
     }
-    return (channelsData || []).map((channel: any) => ({
+    return (channelsData || []).map((channel: ChannelType) => ({
       ...channel,
       icon: getChannelIcon(channel.type),
     })) as ChannelType[];
   }, [isPending, channelsData]);
 
   useEffect(() => {
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
-  }, [selectedDate]);
+    if (channels.length === 0) return;
 
-  useEffect(() => {
-    if (channels.length > 0 && Object.keys(channelContent).length === 0) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setChannelContent((prev) => {
+      if (Object.keys(prev).length > 0) {
+        return prev;
+      }
+
       const initialContent: Record<string, ChannelContent> = {};
+
       channels.forEach((channel) => {
-        initialContent[channel.id] = { text: "", images: [] };
+        initialContent[channel.id] = {
+          text: "",
+          images: [],
+        };
       });
-      setChannelContent(initialContent);
-    }
+
+      return initialContent;
+    });
   }, [channels]);
 
   const connectedChannels = channels.filter((channel) => channel.connected);
@@ -127,7 +149,7 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
       scheduledAt,
       status,
     }: {
-      posts: any[];
+      posts: PostType[];
       scheduledAt: string;
       status?: PostStatus;
     }) => {
@@ -154,7 +176,7 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
       });
       handleOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.log("failed to create post", error);
       toast.error("Failed to save post");
     },
@@ -258,7 +280,7 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
     }
   };
 
-  const handleIdeaSelect = (idea: any) => {
+  const handleIdeaSelect = (idea: IdeaType) => {
     if (!hasConnectedChannel) {
       toast.error("Connect at least one channel to add idea");
       return;
@@ -290,12 +312,22 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
       const content = channelContent[channel.id] ?? { text: "", images: [] };
       return {
         channelTypeId: channel.id,
+        channelType: channel.type,
         content: content.text,
         images: content.images,
       };
     });
     if (postToCreate.some((post) => !post.content)) {
       toast.error("Each selected channel must have content");
+      return;
+    }
+
+    const instagram = postToCreate.find(
+      (post) => post.channelType === ChannelTypeEnum.INSTAGRAM,
+    );
+
+    if (instagram && (!instagram.images || instagram.images.length === 0)) {
+      toast.error("Instagram posts must include at least one image");
       return;
     }
 
@@ -308,7 +340,11 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
     });
 
     createPostMutation.mutate({
-      posts: postToCreate,
+      posts: postToCreate.map(({ channelTypeId, content, images }) => ({
+        channelTypeId,
+        content,
+        images,
+      })),
       scheduledAt: scheduleAt.toISOString(),
       status,
     });
@@ -330,8 +366,8 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
-          "sm:w-full sm:min-w-[700px] gap-0 px-0 pt-0 pb-0",
-          selectedRightTab && "sm:max-w-[950px]",
+          "sm:w-full sm:min-w-175 gap-0 px-0 pt-0 pb-0",
+          selectedRightTab && "sm:max-w-237.5",
         )}
       >
         <div>
@@ -440,7 +476,7 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
 
               <div
                 className="channel--content relative 
-                                        flex flex-col px-8 min-h-[300px] 
+                                        flex flex-col px-8 min-h-75 
                                         h-full overflow-y-auto"
               >
                 {selectedChannels.length === 0 ? (
@@ -493,7 +529,7 @@ hover:no-underline! justify-start gap-3
                                 <HugeiconsIcon
                                   icon={icon}
                                   className={cn(
-                                    "shrink-0 text-white! size-5! p-[3px] rounded-sm",
+                                    "shrink-0 text-white! size-5! p-0.75 rounded-sm",
                                   )}
                                   style={{ background: channel.color }}
                                 />
@@ -501,7 +537,7 @@ hover:no-underline! justify-start gap-3
                               {content.text ? (
                                 <p
                                   className="text-sm text-muted-foreground/80 
-truncate flex-1 text-left max-w-[400px]"
+truncate flex-1 text-left max-w-100"
                                 >
                                   {content.text}
                                 </p>
@@ -520,7 +556,7 @@ truncate flex-1 text-left max-w-[400px]"
                                   <HugeiconsIcon
                                     icon={icon}
                                     className={cn(
-                                      "shrink-0 text-white! size-5! p-[3px] rounded-sm",
+                                      "shrink-0 text-white! size-5! p-0.75 rounded-sm",
                                     )}
                                     style={{ background: channel.color }}
                                   />
@@ -602,7 +638,7 @@ dark:text-amber-400"
             {/* Right — channel preview */}
             {selectedRightTab && (
               <div
-                className="w-[350px] flex flex-col shrink-0 border-l border-border
+                className="w-87.5 flex flex-col shrink-0 border-l border-border
             bg-muted/30 h-full
             "
               >
@@ -616,7 +652,7 @@ dark:text-amber-400"
                           ""
                         }
                         channelId={activeAccordion}
-                        onGenerate={(content: any) => {
+                        onGenerate={(content: string) => {
                           if (globalContent?.text) {
                             setGlobalContent((prev) => ({
                               ...prev,

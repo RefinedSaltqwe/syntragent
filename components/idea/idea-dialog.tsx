@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { IdeaType } from "@/types/idea.type";
 import { ImageObject } from "@/types/post.type";
 import { Shapes } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ContentTextarea from "../content-textarea";
 import { AIAssistant } from "../schedule/ai-assitant";
 import { Button } from "../ui/button";
@@ -37,6 +37,7 @@ const IdeaDialog = ({
   onSave,
 }: IdeaDialogProps) => {
   const isEdit = !!idea?.id;
+  const initialized = useRef(false);
   const [title, setTitle] = useState(idea?.title ?? "");
   const [description, setDescription] = useState(idea?.description ?? "");
   const [images, setImages] = useState<ImageObject[]>(idea?.images ?? []);
@@ -46,6 +47,8 @@ const IdeaDialog = ({
   const [showAI, setShowAI] = useState<boolean>(false);
 
   useEffect(() => {
+    if (!idea || initialized.current) return;
+    initialized.current = true;
     setTitle(idea?.title ?? "");
     setDescription(idea?.description ?? "");
     setImages(idea?.images ?? []);

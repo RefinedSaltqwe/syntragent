@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
-  ThumbsUp,
   MessageCircle,
+  MoreHorizontal,
   Repeat2,
   Send,
-  Globe,
-  MoreHorizontal,
+  ThumbsUp,
 } from "lucide-react";
+import { useState } from "react";
 
 interface LinkedinPreviewProps {
   text: string;

@@ -1,14 +1,6 @@
-import { useState, useEffect } from "react";
+/* eslint-disable @next/next/no-img-element */
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Heart,
-  MessageCircle,
-  Send,
-  Bookmark,
-  MoreHorizontal,
-  Repeat2,
-} from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -17,21 +9,55 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import { cn } from "@/lib/utils";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Repeat2,
+  Send,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface InstagramPreviewProps {
   text: string;
   images?: string[];
   postType?: string;
+  handle: string;
 }
 
-export function InstagramPreview({ text, images }: InstagramPreviewProps) {
+export function InstagramPreview({
+  text,
+  images,
+  handle,
+}: InstagramPreviewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const initialized = useRef(false);
+  const [carouselOrientation, setCarouselOrientation] = useState<
+    "portrait" | "landscape"
+  >("portrait");
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const CHAR_LIMIT = 80;
 
   useEffect(() => {
-    if (!api) return;
+    if (!images?.length) return;
+
+    const img = new window.Image();
+
+    img.onload = () => {
+      setCarouselOrientation(
+        img.naturalHeight >= img.naturalWidth ? "portrait" : "landscape",
+      );
+    };
+
+    img.src = images[0];
+  }, [images]);
+
+  useEffect(() => {
+    if (!api || initialized.current) return;
+    initialized.current = true;
 
     setCurrent(api.selectedScrollSnap());
 
@@ -39,6 +65,8 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
       setCurrent(api.selectedScrollSnap());
     });
   }, [api]);
+
+  const aspectRatio = carouselOrientation === "portrait" ? "4 / 5" : "16 / 9";
 
   return (
     <Card className="overflow-hidden border-none shadow-none">
@@ -50,18 +78,28 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
               <AvatarImage src="./images/avatar.webp" />
               <AvatarFallback>LM</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-semibold">Syntragent</span>
+            <span className="text-sm font-semibold">{handle}</span>
           </div>
           <MoreHorizontal className="size-5 text-muted-foreground" />
         </div>
 
         {/* Image Display - Using Shadcn Carousel */}
-        <div className="relative aspect-square bg-muted overflow-hidden">
+        <div
+          className="relative bg-black/90 overflow-hidden"
+          style={{ aspectRatio }}
+        >
           {images && images.length > 0 ? (
-            <Carousel setApi={setApi} className="w-full h-full">
-              <CarouselContent className="h-full! aspect-square ml-0">
+            <Carousel setApi={setApi} className="absolute inset-0">
+              <CarouselContent
+                className={cn(
+                  "h-full ml-0 align-middle",
+                  carouselOrientation === "portrait"
+                    ? "items-center"
+                    : "items-start",
+                )}
+              >
                 {images.map((image, index) => (
-                  <CarouselItem key={index} className="h-full pl-0">
+                  <CarouselItem key={index} className="basis-full pl-0 h-full">
                     <img
                       src={image}
                       alt={`Instagram post ${index + 1}`}
@@ -118,7 +156,7 @@ export function InstagramPreview({ text, images }: InstagramPreviewProps) {
 
           {/* Caption */}
           <div className="text-sm">
-            <span className="font-semibold mr-2">Syntragent</span>
+            <span className="font-semibold mr-2">{handle}</span>
             {!text ? (
               <span className="text-muted-foreground italic">Nothing yet…</span>
             ) : text.length > CHAR_LIMIT && !isExpanded ? (

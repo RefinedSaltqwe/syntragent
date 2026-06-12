@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import { Suspense, useState } from "react";
-import { useQueryState } from "nuqs"
+import { useQueryState } from "nuqs";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -10,15 +10,15 @@ import ListView from "@/components/schedule/list-view";
 import CalendarView from "@/components/schedule/calendar-view";
 import CreatePostDialog from "@/components/schedule/create-post-dialog";
 
-type ViewType = "calendar" | "list"
+type ViewType = "calendar" | "list";
 const SchedulePageContent = () => {
   const [activeView, setActiveView] = useQueryState("view", {
     defaultValue: "calendar",
   });
-  const [_,setStatus] = useQueryState("status", {
+  const [_, setStatus] = useQueryState("status", {
     defaultValue: "",
-  })
-  const [createPostModalOpen, setCreatePostModalOpen] = useState(false)
+  });
+  const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between px-6 pt-4 pb-2">
@@ -32,15 +32,12 @@ const SchedulePageContent = () => {
             value={activeView}
             onValueChange={(value) => {
               //reset the url status
-              setStatus(null)
-              setActiveView(value as ViewType)
-
+              setStatus(null);
+              setActiveView(value as ViewType);
             }}
             className="border rounded-lg p-px"
           >
-            <ToggleGroupItem value="list"
-              className="gap-2 my-px"
-            >
+            <ToggleGroupItem value="list" className="gap-2 my-px">
               <LayoutList className="size-4" />
               <span className="text-sm">List</span>
             </ToggleGroupItem>
@@ -64,15 +61,13 @@ const SchedulePageContent = () => {
         )}
       </div>
 
-      <CreatePostDialog 
+      <CreatePostDialog
         open={createPostModalOpen}
         onOpenChange={setCreatePostModalOpen}
       />
     </div>
-  )
-}
-
-
+  );
+};
 
 const SchedulePage = () => {
   return (
@@ -81,7 +76,7 @@ const SchedulePage = () => {
         <SchedulePageContent />
       </NuqsAdapter>
     </Suspense>
-  )
-}
+  );
+};
 
-export default SchedulePage
+export default SchedulePage;

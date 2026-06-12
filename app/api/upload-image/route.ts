@@ -7,6 +7,7 @@ function sanitizeFileName(name: string) {
 }
 
 export async function POST(request: Request) {
+  const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -18,6 +19,12 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: "File exceeds the 10MB limit" },
+        { status: 400 },
+      );
     }
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(

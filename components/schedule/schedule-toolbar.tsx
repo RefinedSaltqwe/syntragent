@@ -3,7 +3,11 @@
 import { ChevronDown, Copy, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -16,13 +20,17 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ChannelType } from "@/types/channel.type";
 import ChannelAvatar from "../channel-avatar";
+import { Options } from "nuqs";
 
 interface ScheduleToolbarProps {
   viewType?: "calendar" | "list";
   channelIds: string[];
   toggleChannel: (id: string) => void;
   selectedStatus: string;
-  setSelectedStatus: (status: string | any) => void;
+  setSelectedStatus: (
+    value: string | ((old: string) => string | null) | null,
+    options?: Options | undefined,
+  ) => Promise<URLSearchParams>;
 }
 
 const statusOptions = [
@@ -39,7 +47,7 @@ const ScheduleToolbar = ({
   toggleChannel,
   selectedStatus,
   setSelectedStatus,
-}: ScheduleToolbarProps) =>{
+}: ScheduleToolbarProps) => {
   const { data: channelsData } = useQuery({
     queryKey: ["channels-connected"],
     queryFn: async () => {
@@ -54,13 +62,13 @@ const ScheduleToolbar = ({
     <div className="flex items-center gap-2">
       {/* Status Filter */}
       {viewType === "calendar" && (
-
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="lg" className="h-8 gap-1">
               <Copy className="h-3.5 w-3.5" />
               <span className="font-medium text-sm text-muted-foreground!">
-                {statusOptions.find((s) => s.id === selectedStatus)?.label || "All Posts"}
+                {statusOptions.find((s) => s.id === selectedStatus)?.label ||
+                  "All Posts"}
               </span>
               <ChevronDown className="h-3.5 w-3.5" />
             </Button>
@@ -68,11 +76,13 @@ const ScheduleToolbar = ({
           <PopoverContent className="w-48 p-2" align="end">
             <div className="space-y-1">
               {statusOptions.map((option) => (
-                <button
+                <div
+                  role="button"
                   key={option.id}
+                  tabIndex={0}
                   className={cn(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors",
-                    selectedStatus === option.id && "bg-muted font-medium"
+                    selectedStatus === option.id && "bg-muted font-medium",
                   )}
                   onClick={() => setSelectedStatus(option.id)}
                 >
@@ -81,7 +91,7 @@ const ScheduleToolbar = ({
                     className="pointer-events-none"
                   />
                   <span>{option.label}</span>
-                </button>
+                </div>
               ))}
             </div>
           </PopoverContent>
@@ -110,7 +120,9 @@ const ScheduleToolbar = ({
               <CommandGroup heading="Connected Channels">
                 {connectedChannels?.length === 0 ? (
                   <div className="py-4 px-2 text-center">
-                    <p className="text-xs text-muted-foreground mb-3">No channels connected</p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      No channels connected
+                    </p>
                     <Button size="sm" className="w-fit px-5" asChild>
                       <Link href="/settings">Connect Channel</Link>
                     </Button>
@@ -143,9 +155,8 @@ const ScheduleToolbar = ({
           </Command>
         </PopoverContent>
       </Popover>
-
     </div>
   );
-}
+};
 
 export default ScheduleToolbar;
