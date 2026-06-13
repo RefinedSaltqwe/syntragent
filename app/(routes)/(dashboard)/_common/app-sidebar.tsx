@@ -23,6 +23,7 @@ import {
   Plus,
   PlusCircleIcon,
   Settings,
+  Image,
 } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import Logo from "@/components/logo";
@@ -41,6 +42,7 @@ import CreatePostDialog from "@/components/schedule/create-post-dialog";
 const mainNav = [
   { name: "Ideas", href: "/ideas", icon: Lightbulb },
   { name: "Schedule", href: "/schedule", icon: Calendar },
+  { name: "Media", href: "/media", icon: Image },
   { name: "Billing", href: "/billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
