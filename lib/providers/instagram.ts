@@ -29,3 +29,26 @@ export async function requestLongLivedToken(secret: string, token: string) {
     expiresAt,
   };
 }
+
+export async function refreshInstagramToken(accessToken: string) {
+  const response = await fetch(
+    `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`,
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to refresh Instagram token: ${JSON.stringify(data)}`,
+    );
+  }
+
+  const seconds = Number(data.expires_in);
+
+  const expiresAt = Date.now() + seconds * 1000;
+
+  return {
+    accessToken: data.access_token,
+    expiresAt,
+  };
+}

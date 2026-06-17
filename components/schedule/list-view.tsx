@@ -1,4 +1,4 @@
-import { useConfirmationDialog } from "@/hooks/store/use-dialog";
+import { useHandleDialog } from "@/hooks/use-confirm-dialog";
 import { cn } from "@/lib/utils";
 import { PostType } from "@/types/post.type";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import {
   AlarmClockCheck,
   ExternalLink,
   LayoutList,
+  Pencil,
   Pin,
   Plus,
   Send,
@@ -25,9 +26,6 @@ import { Spinner } from "../ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { EditPostDialog } from "./edit-post-dialog";
 import ScheduleToolbar from "./schedule-toolbar";
-import { useHandleDialog } from "@/hooks/use-confirm-dialog";
-
-type TabType = "draft" | "queue" | "published" | "failed";
 
 type GroupPostType = {
   key: string;
@@ -443,8 +441,8 @@ const ListView = ({
                                         variant="outline"
                                         onClick={() => handleEditPost(post)}
                                       >
-                                        <AlarmClockCheck className="size-4" />
-                                        Reschedule
+                                        <Pencil className="size-4" />
+                                        Edit
                                       </Button>
 
                                       {post.status === "draft" && (

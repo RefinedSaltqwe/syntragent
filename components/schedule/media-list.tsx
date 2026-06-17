@@ -149,11 +149,14 @@ const MediaList: React.FC<MediaListProps> = ({
 
       <div className={cn("overflow-y-auto", height)}>
         {isLoading ? (
-          <div className="px-6 grid grid-cols-3 gap-3">
+          <div className={cn("px-6 grid gap-3", columns)}>
             {Array.from({ length: 9 }).map((_, index) => (
               <Skeleton
                 key={index}
-                className="shrink-0 relative size-24 rounded-lg overflow-hidden border col-span-1"
+                className={cn(
+                  "shrink-0 relative rounded-lg overflow-hidden border col-span-1",
+                  imageSize,
+                )}
               />
             ))}
           </div>

@@ -5,6 +5,7 @@ import { ImageObject, PostType } from "@/types/post.type";
 import { decrypt, encrypt } from "@/lib/encryption";
 import { refreshOauthToken } from "@/lib/social-oauth";
 import { ChannelTypeEnum } from "@/constants/channels";
+import { refreshInstagramToken } from "@/lib/providers/instagram";
 
 type DuePost = {
   id: string;
@@ -114,9 +115,19 @@ export const publishScheduledPost = inngest.createFunction(
       : null;
     const callbackUrl = `${APP_URL}/api/channel/callback`;
     const shouldRefreshBeforePublish =
-      Boolean(refreshToken) &&
-      tokenExpiresAt !== null &&
-      tokenExpiresAt <= Date.now();
+      providerType === ChannelTypeEnum.INSTAGRAM
+        ? tokenExpiresAt !== null &&
+          tokenExpiresAt - Date.now() < 7 * 24 * 60 * 60 * 1000
+        : Boolean(refreshToken) &&
+          tokenExpiresAt !== null &&
+          tokenExpiresAt <= Date.now();
+
+    console.log(
+      "refresh",
+      refreshOauthToken,
+      "shouldbe",
+      shouldRefreshBeforePublish,
+    );
 
     if (!providerType || !accessToken) {
       logger.error("Missing provider type or access token", {
@@ -128,21 +139,47 @@ export const publishScheduledPost = inngest.createFunction(
 
     let currentAccessToken = accessToken;
 
-    if (shouldRefreshBeforePublish && refreshToken) {
+    // If Instagram token expires in 60 days. Refresh token.
+    if (
+      providerType === ChannelTypeEnum.INSTAGRAM &&
+      tokenExpiresAt !== null &&
+      tokenExpiresAt - Date.now() < 7 * 24 * 60 * 60 * 1000
+    ) {
+      const result = await step.run("refresh-instagram-token", async () => {
+        const data = await refreshInstagramToken(currentAccessToken);
+
+        await saveRefreshedToken(
+          post.user_channels!.id,
+          data.accessToken,
+          "", // Instagram has no refresh token
+          data.expiresAt,
+        );
+
+        return data;
+      });
+
+      currentAccessToken = result.accessToken;
+    }
+
+    // Everything else
+    else if (shouldRefreshBeforePublish && refreshToken) {
       const result = await step.run("refresh-token", async () => {
         const data = await refreshOauthToken(
           providerType as ChannelTypeEnum,
           refreshToken,
           callbackUrl,
         );
+
         await saveRefreshedToken(
-          post.user_channels?.id,
+          post.user_channels!.id,
           data.accessToken,
           data.refreshToken ?? refreshToken,
           data.expiresAt,
         );
+
         return data;
       });
+
       currentAccessToken = result.accessToken;
     }
 
@@ -410,7 +447,8 @@ async function uploadImagesToTwitter({
     let data: any = null;
     try {
       data = JSON.parse(response);
-    } catch (e) {
+    } catch (e: unknown) {
+      console.error(e);
       logger.error("Failed to parse Twitter media upload response", {
         response,
       });
