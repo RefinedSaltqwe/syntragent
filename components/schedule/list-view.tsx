@@ -346,7 +346,6 @@ const ListView = ({
                                     onClick={() => handleDeletePost(post)}
                                   >
                                     <Trash className="size-4" />
-                                    Delete
                                   </Button>
                                 </div>
                                 <div

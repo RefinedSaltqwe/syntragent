@@ -8,17 +8,19 @@ import { ChannelContent } from "./create-post-dialog";
 import { cn } from "@/lib/utils";
 
 type MediaListProps = {
-  mode: "picker" | "manage";
+  mode: "picker" | "manage" | "update";
   columns?: string;
   imageSize?: string;
   height?: string;
-  selectedChannels?: string[];
-  globalContent?: ChannelContent;
-  setGlobalContent?: Dispatch<SetStateAction<ChannelContent>>;
-  channelContent?: Record<string, ChannelContent>;
-  setChannelContent?: Dispatch<SetStateAction<Record<string, ChannelContent>>>;
-  imagesToBeDeleted?: ImageObject[];
-  setImagesToBeDeleted?: Dispatch<SetStateAction<ImageObject[]>>;
+  imgs?: ImageObject[]; // Edit
+  setImgs?: Dispatch<React.SetStateAction<ImageObject[]>>; // Edit
+  selectedChannels?: string[]; // Create
+  globalContent?: ChannelContent; // Create
+  setGlobalContent?: Dispatch<SetStateAction<ChannelContent>>; //Create
+  channelContent?: Record<string, ChannelContent>; //Create
+  setChannelContent?: Dispatch<SetStateAction<Record<string, ChannelContent>>>; //Create
+  imagesToBeDeleted?: ImageObject[]; // Delete
+  setImagesToBeDeleted?: Dispatch<SetStateAction<ImageObject[]>>; // Delete
 };
 
 const MediaList: React.FC<MediaListProps> = ({
@@ -33,6 +35,8 @@ const MediaList: React.FC<MediaListProps> = ({
   setChannelContent,
   imagesToBeDeleted,
   setImagesToBeDeleted,
+  imgs,
+  setImgs,
 }) => {
   const { data: images = [], isLoading } = useQuery({
     queryKey: ["images"],
@@ -51,6 +55,7 @@ const MediaList: React.FC<MediaListProps> = ({
   function handleSetImages(url: string, key: string) {
     const image: ImageObject = { url, key };
 
+    // For Managing Images (Delete)
     if (setImagesToBeDeleted && mode == "manage") {
       setImagesToBeDeleted((prev) => {
         const exists = prev.some((img) => img.key === key);
@@ -63,6 +68,20 @@ const MediaList: React.FC<MediaListProps> = ({
       });
     }
 
+    // For Editing Post
+    if (mode === "update" && setImgs) {
+      setImgs((prev) => {
+        const exist = prev.some((img) => img.key === key);
+
+        if (exist) {
+          return prev.filter((img) => img.key != key);
+        }
+
+        return [...prev, image];
+      });
+    }
+
+    // For Create Post
     if (
       selectedChannels &&
       setChannelContent &&
@@ -162,6 +181,9 @@ const MediaList: React.FC<MediaListProps> = ({
                       : "",
                   imagesToBeDeleted &&
                     imagesToBeDeleted.some((img) => img.key === image.key) &&
+                    "border-primary border-4",
+                  imgs &&
+                    imgs.some((img) => img.key === image.key) &&
                     "border-primary border-4",
                   imageSize,
                 )}
