@@ -25,6 +25,7 @@ import { Spinner } from "../ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { EditPostDialog } from "./edit-post-dialog";
 import ScheduleToolbar from "./schedule-toolbar";
+import { useHandleDialog } from "@/hooks/use-confirm-dialog";
 
 type TabType = "draft" | "queue" | "published" | "failed";
 
@@ -40,14 +41,7 @@ const ListView = ({
   setCreatePostModalOpen: (open: boolean) => void;
 }) => {
   const queryClient = useQueryClient();
-  const onOpen = useConfirmationDialog((state) => state.onOpen);
-  const setTitle = useConfirmationDialog((state) => state.setTitle);
-  const setDescription = useConfirmationDialog((state) => state.setDescription);
-  const proceed = useConfirmationDialog((state) => state.proceed);
-  const setProceed = useConfirmationDialog((state) => state.onIsProceed);
-  const setPostId = useConfirmationDialog((state) => state.setPostId);
-  const postId = useConfirmationDialog((state) => state.postId);
-  const setPending = useConfirmationDialog((state) => state.setPending);
+  const { handleDialog, proceed, postId } = useHandleDialog();
 
   const [activeTab, setActiveTab] = useQueryState("status", {
     defaultValue: "draft",
@@ -154,10 +148,13 @@ const ListView = ({
       toast.error(error.message || "Failed to delete post");
     },
     onSettled: () => {
-      setPending(false);
-      setTitle("");
-      setDescription("");
-      onOpen(false);
+      handleDialog({
+        open: false,
+        title: "",
+        description: "",
+        proceed: false,
+        pending: false,
+      });
     },
   });
 
@@ -195,21 +192,30 @@ const ListView = ({
   const handleDeletePost = (post: PostType) => {
     if (deletePostMutation.isPending) return;
 
-    setPostId(post.id);
-    onOpen(true);
-    setTitle("Delete Post");
-    setDescription(
-      "Are you sure you want to delete this post? This action cannot be undone.",
-    );
+    handleDialog({
+      open: true,
+      title: "Delete Post",
+      description:
+        "Are you sure you want to delete this post? This action cannot be undone.",
+      proceed: false,
+      postId: post.id,
+      pending: false,
+    });
   };
 
   useEffect(() => {
     if (proceed && postId.length > 0) {
       const id = postId;
 
-      setPending(true);
-      setProceed(false);
-      setPostId("");
+      handleDialog({
+        open: true,
+        title: "Delete Post",
+        description:
+          "Are you sure you want to delete this post? This action cannot be undone.",
+        proceed: false,
+        postId: "",
+        pending: true,
+      });
 
       deletePostMutation.mutate(id);
     }
@@ -333,52 +339,63 @@ const ListView = ({
                             </div>
 
                             <Card className="py-0 gap-0">
-                              <CardContent
-                                className="grid gap-6 p-5
+                              <CardContent className="flex flex-col">
+                                <div className="mt-auto flex w-full justify-end px-5 pt-5">
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => handleDeletePost(post)}
+                                  >
+                                    <Trash className="size-4" />
+                                    Delete
+                                  </Button>
+                                </div>
+                                <div
+                                  className="grid gap-6 p-5
                             md:grid-cols-[minmax(0,1fr)_250px]"
-                              >
-                                <div className="space-y-5">
-                                  {channel ? (
-                                    <ChannelAvatar
-                                      type={channel.type}
-                                      color={channel.color}
-                                      profileImage={
-                                        post.user_channels?.profile_image
-                                      }
-                                      name={
-                                        post.user_channels?.handle ||
-                                        channel.name
-                                      }
-                                    />
-                                  ) : null}
+                                >
+                                  <div className="space-y-5">
+                                    {channel ? (
+                                      <ChannelAvatar
+                                        type={channel.type}
+                                        color={channel.color}
+                                        profileImage={
+                                          post.user_channels?.profile_image
+                                        }
+                                        name={
+                                          post.user_channels?.handle ||
+                                          channel.name
+                                        }
+                                      />
+                                    ) : null}
 
-                                  <p
-                                    className="whitespace-pre-wrap text-sm leading-6
+                                    <p
+                                      className="whitespace-pre-wrap text-sm leading-6
                                 line-clamp-4
                                 "
-                                  >
-                                    {post.content}
-                                  </p>
-                                </div>
+                                    >
+                                      {post.content}
+                                    </p>
+                                  </div>
 
-                                <div
-                                  className="max-h-41.25 overflow-hidden rounded-2xl
+                                  <div
+                                    className="max-h-41.25 overflow-hidden rounded-2xl
                   border bg-muted/40"
-                                >
-                                  {previewImage ? (
-                                    <Image
-                                      src={previewImage}
-                                      alt="Post media"
-                                      className="h-full w-full object-cover"
-                                      sizes="(max-width: 768px) 100vw, 250px"
-                                      height={250}
-                                      width={250}
-                                    />
-                                  ) : (
-                                    <div className="flex h-full-center justify-center text-sm text-muted-foreground">
-                                      No media
-                                    </div>
-                                  )}
+                                  >
+                                    {previewImage ? (
+                                      <Image
+                                        src={previewImage}
+                                        alt="Post media"
+                                        className="h-full w-full object-cover"
+                                        sizes="(max-width: 768px) 100vw, 250px"
+                                        height={250}
+                                        width={250}
+                                      />
+                                    ) : (
+                                      <div className="flex h-full-center justify-center text-sm text-muted-foreground">
+                                        No media
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </CardContent>
 
@@ -429,13 +446,6 @@ const ListView = ({
                                       >
                                         <AlarmClockCheck className="size-4" />
                                         Reschedule
-                                      </Button>
-                                      <Button
-                                        variant="destructive"
-                                        onClick={() => handleDeletePost(post)}
-                                      >
-                                        <Trash className="size-4" />
-                                        Delete
                                       </Button>
 
                                       {post.status === "draft" && (

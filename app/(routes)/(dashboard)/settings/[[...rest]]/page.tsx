@@ -20,10 +20,12 @@ const SettingsPage = () => {
   const { theme, setTheme } = useTheme();
   return (
     <div className="w-full">
-      <div className="max-w-5xl mx-auto w-full h-full">
-        <div className="py-4">
-          <h1 className="text-xl font-semibold">Settings</h1>
-        </div>
+      <div className="max-w-7xl mx-auto w-full h-full">
+        <header className="flex items-center justify-between pt-4 pb-2">
+          <div>
+            <h1 className="text-xl font-semibold">Settings</h1>
+          </div>
+        </header>
 
         <div>
           <Tabs defaultValue="channels">

@@ -8,7 +8,7 @@ import { ImageObject } from "@/types/post.type";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parse, set } from "date-fns";
-import { AlertTriangle, Lightbulb, ScanEye, Wand2 } from "lucide-react";
+import { AlertTriangle, Image, Lightbulb, ScanEye, Wand2 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ import { AIAssistant } from "./ai-assitant";
 import IdeasList from "./ideas-list";
 import PreviewPanel from "./preview";
 import { ScheduleDatePicker } from "./schedule-date-picker";
+import MediaList from "./media-list";
 
 type PropsType = {
   open: boolean;
@@ -49,15 +50,16 @@ type PostType = {
   images?: ImageObject[];
 };
 
-type ChannelContent = {
+export type ChannelContent = {
   text: string;
   images: ImageObject[];
 };
 
-type ActionTabType = "ideas" | "ai" | "preview";
+type ActionTabType = "ideas" | "ai" | "preview" | "media";
 
 const rightTabs = [
   { id: "ideas" as ActionTabType, label: "Ideas", icon: Lightbulb },
+  { id: "media" as ActionTabType, label: "Media", icon: Image },
   { id: "ai" as ActionTabType, label: "AI Assistant", icon: Wand2 },
   { id: "preview" as ActionTabType, label: "Preview", icon: ScanEye },
 ];
@@ -71,6 +73,7 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
   const [channelContent, setChannelContent] = useState<
     Record<string, ChannelContent>
   >({});
+
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [selectedRightTab, setSelectedRightTab] =
     useState<ActionTabType | null>(null);
@@ -254,12 +257,16 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
         : [...prev, channelId];
 
       if (!isSelected) {
-        if (globalContent.text && !channelContent[channelId]?.text) {
+        if (
+          (globalContent.text || globalContent.images.length > 0) &&
+          !channelContent[channelId]?.text &&
+          !channelContent[channelId]?.images?.length
+        ) {
           const limit = Number(character_limit);
+
           setChannelContent((prev) => ({
             ...prev,
             [channelId]: {
-              ...prev[channelId],
               text: globalContent.text.slice(0, limit),
               images: [...globalContent.images],
             },
@@ -494,6 +501,15 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
                       onImagesChange={(images) =>
                         handleGlobalContentChange(globalContent.text, images)
                       }
+                      onAIAssistantClick={() => {
+                        setSelectedRightTab((prev) => {
+                          if (prev) {
+                            return null;
+                          }
+
+                          return "ai";
+                        });
+                      }}
                     />
                   </div>
                 ) : (
@@ -588,7 +604,13 @@ dark:text-amber-400"
                                   showAIAssistant={true}
                                   disabled={!channel.connected}
                                   onAIAssistantClick={() => {
-                                    setSelectedRightTab("ai");
+                                    setSelectedRightTab((prev) => {
+                                      if (prev) {
+                                        return null;
+                                      }
+
+                                      return "ai";
+                                    });
                                   }}
                                   onChange={(text) =>
                                     handleTextChange(
@@ -673,6 +695,17 @@ dark:text-amber-400"
 
                   {selectedRightTab === "ideas" && (
                     <IdeasList onSelect={handleIdeaSelect} />
+                  )}
+
+                  {selectedRightTab === "media" && (
+                    <MediaList
+                      mode="picker"
+                      selectedChannels={selectedChannels}
+                      globalContent={globalContent}
+                      setGlobalContent={setGlobalContent}
+                      channelContent={channelContent}
+                      setChannelContent={setChannelContent}
+                    />
                   )}
 
                   {selectedRightTab === "preview" && (

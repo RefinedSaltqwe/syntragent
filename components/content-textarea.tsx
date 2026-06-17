@@ -1,18 +1,19 @@
 "use client";
 
-import * as React from "react";
-import { EmojiPicker } from "@ferrucc-io/emoji-picker";
-import { X, Wand2Icon, ImagePlus, SmileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ImageObject } from "@/types/post.type";
+import { EmojiPicker } from "@ferrucc-io/emoji-picker";
+import { useQueryClient } from "@tanstack/react-query";
+import imageCompression from "browser-image-compression";
+import { ImagePlus, SmileIcon, Wand2Icon, X } from "lucide-react";
+import Image from "next/image";
+import * as React from "react";
+import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Separator } from "./ui/separator";
 import { Spinner } from "./ui/spinner";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Textarea } from "./ui/textarea";
-import { ImageObject } from "@/types/post.type";
-import imageCompression from "browser-image-compression";
-import { toast } from "sonner";
-import Image from "next/image";
 
 interface ContentTextareaProps {
   value: string;
@@ -46,6 +47,7 @@ const ContentTextarea = ({
   renderContent,
   disabled = false,
 }: ContentTextareaProps) => {
+  const queryClient = useQueryClient();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -96,7 +98,7 @@ const ContentTextarea = ({
 
         const formData = new FormData();
         formData.append("file", compressedImage);
-        const response = await fetch("/api/upload-image", {
+        const response = await fetch("/api/image/upload-image", {
           method: "POST",
           body: formData,
         });
@@ -109,6 +111,7 @@ const ContentTextarea = ({
           });
         }
       }
+      queryClient.invalidateQueries({ queryKey: ["images"] });
       onImagesChange?.(newImages);
     } catch (error) {
       console.error("Upload error:", error);

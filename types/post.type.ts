@@ -5,6 +5,15 @@ export type ImageObject = {
   key: string;
 };
 
+export type ImagesResponse = {
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+  images: ImageObject[];
+};
+
 export type PostType = {
   id: string;
   content: string;
