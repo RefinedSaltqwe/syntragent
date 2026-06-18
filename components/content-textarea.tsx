@@ -163,7 +163,7 @@ const ContentTextarea = ({
               `shrink-0 size-24 border-2 border-dashed border-muted-foreground/25
                rounded-lg flex flex-col items-center 
               justify-center cursor-pointer hover:border-muted-foreground/50
-               hover:bg-muted/50 
+               hover:bg-muted/80 bg-background/80 
               transition-colors mb-3 shadow-sm`,
               (isUploading || disabled) && "opacity-50 cursor-not-allowed",
               disabled && "grayscale",
