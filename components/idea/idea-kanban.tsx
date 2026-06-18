@@ -11,7 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontal, Plus } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -354,6 +354,10 @@ p-2 px-3 transition-colors min-h-0`,
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
+                                        style={
+                                          provided.draggableProps
+                                            .style as CSSProperties
+                                        }
                                         className={cn(
                                           "group cursor-pointer! shadow-sm rounded-sm! active:cursor-grabbing transform transition-all",
                                           snapshot.isDragging &&

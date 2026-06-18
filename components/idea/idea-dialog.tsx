@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { IdeaType } from "@/types/idea.type";
 import { ImageObject } from "@/types/post.type";
-import { Shapes } from "lucide-react";
+import { Shapes, Wand2, Image } from "lucide-react";
 import { useEffect, useState } from "react";
 import ContentTextarea from "../content-textarea";
 import { AIAssistant } from "../schedule/ai-assitant";
@@ -22,6 +22,8 @@ import {
 } from "../ui/select";
 import { Spinner } from "../ui/spinner";
 import { Textarea } from "../ui/textarea";
+import { ActionTabType } from "@/types/common.type";
+import MediaList from "../schedule/media-list";
 
 type IdeaDialogProps = {
   open: boolean;
@@ -49,7 +51,11 @@ const IdeaDialog = ({
   const [selectedColumn, setSelectedColumn] = useState(
     idea?.columnId ?? selectedColumnId,
   );
-  const [showAI, setShowAI] = useState<boolean>(false);
+  const [showRightTab, setShowRightTab] = useState<ActionTabType | null>(null);
+  const rightTabs = [
+    { id: "ai" as ActionTabType, label: "AI Assistant", icon: Wand2 },
+    { id: "media" as ActionTabType, label: "Media", icon: Image },
+  ];
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +65,7 @@ const IdeaDialog = ({
     setDescription(idea?.description ?? "");
     setImages(idea?.images ?? []);
     setSelectedColumn(idea?.columnId ?? selectedColumnId);
-    setShowAI(false);
+    setShowRightTab(null);
   }, [open, idea, selectedColumnId]);
 
   const handleSave = () => {
@@ -81,15 +87,16 @@ const IdeaDialog = ({
       <DialogContent
         className={cn(
           `flex max-h-[90vh] gap-0 overflow-hidden p-0 sm:w-[95%] sm:min-w-137.5`,
-          showAI && "sm:max-w-225",
+          showRightTab && "sm:max-w-225",
         )}
       >
-        <div className="flex min-h-0 flex-1">
-          <div className="flex min-w-0 flex-1 flex-col">
-            <DialogHeader className="shrink-0 flex flex-row items-center justify-between px-5 py-4">
+        <div className="flex min-h-0 flex-1 ">
+          <div className="flex min-w-0 flex-1 flex-col border-r border-border">
+            <DialogHeader className="shrink-0 flex flex-row items-center justify-between px-5 py-4 border-b border-border">
               <DialogTitle className="text-base font-semibold">
                 {isEdit ? "Edit Idea" : "Create Idea"}
               </DialogTitle>
+
               <div>
                 <Select
                   value={selectedColumn}
@@ -132,7 +139,15 @@ const IdeaDialog = ({
                 images={images}
                 onImagesChange={setImages}
                 showAIAssistant={true}
-                onAIAssistantClick={() => setShowAI((value) => !value)}
+                onAIAssistantClick={() =>
+                  setShowRightTab((prev) => {
+                    if (prev) {
+                      return null;
+                    }
+
+                    return "ai";
+                  })
+                }
               />
             </div>
 
@@ -141,28 +156,77 @@ const IdeaDialog = ({
                 size="lg"
                 disabled={isSaving || !title.trim()}
                 onClick={handleSave}
+                className={cn(showRightTab && "hidden")}
               >
                 {isSaving && <Spinner />}
                 Save Idea
               </Button>
+              <div className="bg-transparent h-10" />
             </div>
           </div>
 
           <DialogDescription />
 
-          {showAI && (
+          {showRightTab && (
             <div
-              className="w-85 shrink-0 border-l border-border
-                        bg-muted/30
-                        "
+              className="w-90 flex flex-col shrink-0
+            h-full
+            "
             >
-              <div className="p-4">
-                <AIAssistant
-                  content={`${title}\n\n${description}`}
-                  onGenerate={(content: string) => {
-                    setDescription(content);
-                  }}
-                />
+              <div className="flex flex-col w-full bg-background px-5 py-4 border-b border-border">
+                <div className="flex items-center justify-end gap-px pr-6 ">
+                  {rightTabs.map((tab) => (
+                    <Button
+                      key={tab.id}
+                      variant={showRightTab === tab.id ? "default" : "ghost"}
+                      className={cn(!showRightTab && "size-8")}
+                      onClick={() =>
+                        setShowRightTab((prev) =>
+                          prev === tab.id ? null : tab.id,
+                        )
+                      }
+                    >
+                      <tab.icon className="size-4" />
+                      <span className={cn(!showRightTab && "hidden")}>
+                        {" "}
+                        {tab.label}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div
+                className={cn(
+                  "py-4 flex-1 flex flex-col h-full px-2",
+                  showRightTab != "media" && "bg-muted",
+                )}
+              >
+                {showRightTab === "ai" && (
+                  <AIAssistant
+                    content={`${title}\n\n${description}`}
+                    onGenerate={(content: string) => {
+                      setDescription(content);
+                    }}
+                  />
+                )}
+                {showRightTab === "media" && (
+                  <MediaList
+                    mode="simple"
+                    height="h-114"
+                    setImgs={setImages}
+                    imgs={images}
+                  />
+                )}
+              </div>
+              <div className="shrink-0 flex items-center justify-end gap-2 border-t border-border px-5 py-3">
+                <Button
+                  size="lg"
+                  disabled={isSaving || !title.trim()}
+                  onClick={handleSave}
+                >
+                  {isSaving && <Spinner />}
+                  Save Idea
+                </Button>
               </div>
             </div>
           )}

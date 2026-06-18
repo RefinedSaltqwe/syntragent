@@ -8,19 +8,17 @@ import { ChannelContent } from "./create-post-dialog";
 import { cn } from "@/lib/utils";
 
 type MediaListProps = {
-  mode: "picker" | "manage" | "update";
+  mode: "simple" | "complex";
   columns?: string;
   imageSize?: string;
   height?: string;
   imgs?: ImageObject[]; // Edit
-  setImgs?: Dispatch<React.SetStateAction<ImageObject[]>>; // Edit
+  setImgs?: Dispatch<SetStateAction<ImageObject[]>>; // Edit
   selectedChannels?: string[]; // Create
   globalContent?: ChannelContent; // Create
   setGlobalContent?: Dispatch<SetStateAction<ChannelContent>>; //Create
   channelContent?: Record<string, ChannelContent>; //Create
   setChannelContent?: Dispatch<SetStateAction<Record<string, ChannelContent>>>; //Create
-  imagesToBeDeleted?: ImageObject[]; // Delete
-  setImagesToBeDeleted?: Dispatch<SetStateAction<ImageObject[]>>; // Delete
 };
 
 const MediaList: React.FC<MediaListProps> = ({
@@ -33,8 +31,6 @@ const MediaList: React.FC<MediaListProps> = ({
   setGlobalContent,
   channelContent,
   setChannelContent,
-  imagesToBeDeleted,
-  setImagesToBeDeleted,
   imgs,
   setImgs,
 }) => {
@@ -56,25 +52,12 @@ const MediaList: React.FC<MediaListProps> = ({
     const image: ImageObject = { url, key };
 
     // For Managing Images (Delete)
-    if (setImagesToBeDeleted && mode == "manage") {
-      setImagesToBeDeleted((prev) => {
+    if (setImgs && mode == "simple") {
+      setImgs((prev) => {
         const exists = prev.some((img) => img.key === key);
 
         if (exists) {
           return prev.filter((image) => image.key != key);
-        }
-
-        return [...prev, image];
-      });
-    }
-
-    // For Editing Post
-    if (mode === "update" && setImgs) {
-      setImgs((prev) => {
-        const exist = prev.some((img) => img.key === key);
-
-        if (exist) {
-          return prev.filter((img) => img.key != key);
         }
 
         return [...prev, image];
@@ -86,7 +69,7 @@ const MediaList: React.FC<MediaListProps> = ({
       selectedChannels &&
       setChannelContent &&
       setGlobalContent &&
-      mode === "picker"
+      mode === "complex"
     ) {
       //With selected channels
       if (selectedChannels.length > 0) {
@@ -182,8 +165,8 @@ const MediaList: React.FC<MediaListProps> = ({
                         )
                       ? "border-primary border-4"
                       : "",
-                  imagesToBeDeleted &&
-                    imagesToBeDeleted.some((img) => img.key === image.key) &&
+                  imgs &&
+                    imgs.some((img) => img.key === image.key) &&
                     "border-primary border-4",
                   imgs &&
                     imgs.some((img) => img.key === image.key) &&

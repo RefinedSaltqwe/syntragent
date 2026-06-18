@@ -37,6 +37,7 @@ import IdeasList from "./ideas-list";
 import PreviewPanel from "./preview";
 import { ScheduleDatePicker } from "./schedule-date-picker";
 import MediaList from "./media-list";
+import { ActionTabType } from "@/types/common.type";
 
 type PropsType = {
   open: boolean;
@@ -54,8 +55,6 @@ export type ChannelContent = {
   text: string;
   images: ImageObject[];
 };
-
-type ActionTabType = "ideas" | "ai" | "preview" | "media";
 
 const rightTabs = [
   { id: "ideas" as ActionTabType, label: "Ideas", icon: Lightbulb },
@@ -699,7 +698,7 @@ dark:text-amber-400"
 
                   {selectedRightTab === "media" && (
                     <MediaList
-                      mode="picker"
+                      mode="complex"
                       selectedChannels={selectedChannels}
                       globalContent={globalContent}
                       setGlobalContent={setGlobalContent}

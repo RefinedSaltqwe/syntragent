@@ -125,12 +125,12 @@ const Media: React.FC<MediaProps> = () => {
           <div className="h-[calc(100vh-100px)]">
             <div className="flex-1 pt-4 h-full">
               <MediaList
-                mode="manage"
+                mode="simple"
                 columns="grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
                 imageSize="aspect-square w-full"
                 height="h-[90vh]"
-                setImagesToBeDeleted={setImages}
-                imagesToBeDeleted={images}
+                setImgs={setImages}
+                imgs={images}
               />
             </div>
           </div>
