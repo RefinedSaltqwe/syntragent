@@ -78,7 +78,7 @@ const IdeaKanban = () => {
     },
     onError: (error) => {
       console.error("Failed to save idea:", error);
-      toast.error("Faild to save idea");
+      toast.error("Failed to save idea");
     },
   });
 

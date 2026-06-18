@@ -31,14 +31,19 @@ export async function GET() {
         },
       );
     }
-
-    // Sorting images in descending order
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const images = [...((data as any)?.data ?? [])].sort(
+    const imageData = [...((data as any)?.data ?? [])];
+    //Filter Images by ownership
+    const filteredImages = imageData.map((img) => {
+      if (img.key.split("/")[1] === userId) {
+        return img;
+      }
+    });
+    // Sorting images in descending order
+    const images = filteredImages.sort(
       (a, b) =>
         new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
     );
-
     const result = data as unknown as StorageListResponse;
 
     return NextResponse.json({
