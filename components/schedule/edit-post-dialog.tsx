@@ -266,7 +266,7 @@ export function EditPostDialog({
                   )}
                   {selectedRightTab === "media" && (
                     <MediaList
-                      mode="update"
+                      mode="simple"
                       setImgs={setImages}
                       imgs={images}
                     />
