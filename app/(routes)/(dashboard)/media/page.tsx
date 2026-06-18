@@ -1,12 +1,14 @@
 "use client";
 import MediaList from "@/components/schedule/media-list";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useHandleDialog } from "@/hooks/use-confirm-dialog";
 import { deleteImages } from "@/lib/api/media";
 import { ImageObject, ImagesResponse } from "@/types/post.type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import imageCompression from "browser-image-compression";
 import { Plus, Trash } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type MediaProps = {
@@ -15,8 +17,11 @@ type MediaProps = {
 
 const Media: React.FC<MediaProps> = () => {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { handleDialog, proceed } = useHandleDialog();
+  const [isUploading, setIsUploading] = React.useState(false);
   const [images, setImages] = useState<ImageObject[]>([]);
+  const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
   const imgCount = images.length;
   const { data: fetchedImages = [] } = useQuery({
     queryKey: ["images"],
@@ -65,6 +70,58 @@ const Media: React.FC<MediaProps> = () => {
       });
     },
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const newImages = [...images];
+
+    try {
+      // Process each file sequentially to handle large uploads gracefully
+      for (const file of Array.from(files)) {
+        if (file.size > MAX_SIZE) {
+          toast.error(
+            `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB.`,
+            {
+              description: "Maximum allowed size is 10MB",
+            },
+          );
+          return;
+        }
+        // Compress the image before uploading
+        const compressedImage = await imageCompression(file, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 3000,
+          useWebWorker: true,
+        });
+
+        const formData = new FormData();
+        formData.append("file", compressedImage);
+        const response = await fetch("/api/image/upload-image", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) throw new Error("Upload failed");
+        const result = await response.json();
+        if (result.image) {
+          newImages.push({
+            url: result.image.url,
+            key: result.image.key,
+          });
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["images"] });
+    } catch (error) {
+      console.error("Upload error:", error);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const deleteImage = function () {
     handleDialog({
@@ -115,10 +172,30 @@ const Media: React.FC<MediaProps> = () => {
                 Delete
               </Button>
             )}
-            <Button>
-              <Plus className="size-4" />
-              Upload Images
+            <Button
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <Spinner />
+                  Uploading
+                </>
+              ) : (
+                <>
+                  <Plus className="size-4" />
+                  Upload Image
+                </>
+              )}
             </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </div>
         </header>
         <div className="flex flex-col overflow-hidden bg-background">
