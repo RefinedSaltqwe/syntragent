@@ -242,7 +242,7 @@ export function PostCalendar({
                       className={cn(
                         "flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium",
                         isCellToday
-                          ? "bg-green-500 text-white"
+                          ? "bg-[#00bba7] text-white"
                           : isPastDate
                             ? "text-muted-foreground"
                             : "text-foreground",
