@@ -33,22 +33,18 @@ export async function GET() {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const imageData = [...((data as any)?.data ?? [])];
-    console.log("imageData", imageData);
     //Filter Images by ownership
     const filteredImages = imageData.filter((img) => {
       if (img.key.split("/")[1] === userId) {
         return img;
       }
     });
-    console.log("filteredImages", filteredImages);
     // Sorting images in descending order
     const images = filteredImages.sort(
       (a, b) =>
         new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
     );
     const result = data as unknown as StorageListResponse;
-
-    console.log("images", images);
 
     return NextResponse.json({
       images,

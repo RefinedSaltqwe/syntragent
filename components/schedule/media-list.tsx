@@ -47,7 +47,7 @@ const MediaList: React.FC<MediaListProps> = ({
       return result.images as ImageObject[];
     },
   });
-  console.log("Images", images.length);
+
   function handleSetImages(url: string, key: string) {
     const image: ImageObject = { url, key };
 
