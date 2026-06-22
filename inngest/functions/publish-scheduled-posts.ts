@@ -21,7 +21,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
     name: "Publish Scheduled Posts",
 
     /**
-     * Runs every 10 minutes.
+     * Runs every 1 minute.
      *
      * Inngest Cloud wakes up and calls:
      *
@@ -31,7 +31,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
      */
     triggers: [
       {
-        cron: "*/10 * * * *",
+        cron: "*/1 * * * *",
       },
     ],
   },
