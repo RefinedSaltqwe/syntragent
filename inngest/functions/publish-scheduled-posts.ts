@@ -81,6 +81,10 @@ export const publishScheduledPostsCron = inngest.createFunction(
         throw error;
       }
 
+      if (!data?.length) {
+        return [];
+      }
+
       // Change all status to publishing
       const postsToPublish: DuePost[] = [];
 
