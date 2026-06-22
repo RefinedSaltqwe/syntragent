@@ -237,14 +237,14 @@ const ListView = ({
       <div className="flecx flex-col h-full pt-3">
         <div className="flex items-center justify-between border-b px-6">
           <Tabs
-            value={activeTab || "draft"}
+            value={activeTab == "publishing" ? "queue" : activeTab || "queue"}
             onValueChange={(val) => setActiveTab(val)}
           >
             <TabsList variant="line" className="space-x-4">
               <TabsTrigger value="draft">
                 Draft {renderTotalBadge(totalDrafts)}
               </TabsTrigger>
-              <TabsTrigger value="queue">
+              <TabsTrigger value={"queue"}>
                 Queue {renderTotalBadge(totalQueue)}
               </TabsTrigger>
               <TabsTrigger value="published">

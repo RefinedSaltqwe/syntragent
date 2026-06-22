@@ -31,7 +31,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
      */
     triggers: [
       {
-        cron: "*/5 * * * *",
+        cron: "*/2 * * * *",
       },
     ],
   },
@@ -81,7 +81,35 @@ export const publishScheduledPostsCron = inngest.createFunction(
         throw error;
       }
 
-      return (data ?? []) as DuePost[];
+      if (data.length == 0) {
+        return [];
+      }
+      // Change all status to publishing
+      const postsToPublish: DuePost[] = [];
+
+      for (const post of data ?? []) {
+        const { data: updatedPost, error } = await insforge.database
+          .from("scheduled_posts")
+          .update({
+            status: "publishing",
+          })
+          .eq("id", post.id)
+          .eq("status", "queue")
+          .select("id")
+          .single();
+
+        if (error) {
+          logger.error(error);
+          continue;
+        }
+
+        // Only this worker successfully claimed it
+        if (updatedPost) {
+          postsToPublish.push(post);
+        }
+      }
+
+      return postsToPublish;
     });
 
     /**
@@ -159,7 +187,7 @@ export const publishScheduledPost = inngest.createFunction(
         .from("scheduled_posts")
         .select("*, user_channels(*, channel_types(id, type, name))")
         .eq("id", event.data.postId)
-        .eq("status", "queue")
+        .eq("status", "publishing")
         .single();
 
       logger.info("Load post", { data });
