@@ -9,6 +9,7 @@ import {
   Pencil,
   Pin,
   Plus,
+  RotateCw,
   Send,
   Trash,
 } from "lucide-react";
@@ -41,7 +42,7 @@ const ListView = ({
   const { handleDialog, proceed, postId } = useHandleDialog();
 
   const [activeTab, setActiveTab] = useQueryState("status", {
-    defaultValue: "draft",
+    defaultValue: "queue",
   });
   const [channelIds, setChannelIds] = useQueryState("channelIds", {
     defaultValue: [],
@@ -92,7 +93,6 @@ const ListView = ({
           return res.json();
         },
         refetchOnWindowFocus: true,
-        refetchInterval: 30000, // every 30s
       },
       {
         queryKey: ["posts", "totals", channelIds],
@@ -105,10 +105,13 @@ const ListView = ({
           return res.json();
         },
         refetchOnWindowFocus: true,
-        refetchInterval: 30000, // every 30s
       },
     ],
   });
+
+  const handleRefresh = async () => {
+    await Promise.all([postsQuery.refetch(), totalsQuery.refetch()]);
+  };
 
   const data = postsQuery.data;
   const isPending = postsQuery.isFetching;
@@ -251,6 +254,12 @@ const ListView = ({
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          <div className="flex w-full justify-end">
+            <Button variant={"ghost"} onClick={handleRefresh}>
+              <RotateCw className="size-4" />
+              Refresh
+            </Button>
+          </div>
           <ScheduleToolbar
             viewType="list"
             channelIds={channelIds}
