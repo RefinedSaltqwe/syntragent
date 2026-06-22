@@ -21,7 +21,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
     name: "Publish Scheduled Posts",
 
     /**
-     * Runs every 5 minute.
+     * Runs every 2 minute.
      *
      * Inngest Cloud wakes up and calls:
      *
@@ -81,9 +81,6 @@ export const publishScheduledPostsCron = inngest.createFunction(
         throw error;
       }
 
-      if (data.length == 0) {
-        return [];
-      }
       // Change all status to publishing
       const postsToPublish: DuePost[] = [];
 
