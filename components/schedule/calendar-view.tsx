@@ -8,6 +8,7 @@ import { PostCalendar } from "./post-calendar";
 import ScheduleToolbar from "./schedule-toolbar";
 import CreatePostDialog from "./create-post-dialog";
 import { EditPostDialog } from "./edit-post-dialog";
+import RefreshButton from "./refresh-button";
 
 type ViewType = "month" | "week";
 
@@ -28,7 +29,11 @@ const CalendarView = () => {
     useState<PostType | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const { data, isFetching: isPending } = useQuery({
+  const {
+    data,
+    refetch: refetchPost,
+    isFetching: isPending,
+  } = useQuery({
     queryKey: ["posts", selectedStatus, channelIds],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -44,6 +49,10 @@ const CalendarView = () => {
     },
     placeholderData: keepPreviousData,
   });
+
+  const handleRefresh = async () => {
+    await refetchPost();
+  };
 
   const posts = data?.posts || ([] as PostType[]);
 
@@ -87,12 +96,18 @@ const CalendarView = () => {
             onPostClick={handlePostClick}
             onCreatePost={handleCreatePost}
             rightActions={
-              <ScheduleToolbar
-                channelIds={channelIds}
-                toggleChannel={toggleChannel}
-                selectedStatus={selectedStatus}
-                setSelectedStatus={setSelectedStatus}
-              />
+              <>
+                <RefreshButton
+                  handleRefresh={handleRefresh}
+                  isPending={isPending}
+                />
+                <ScheduleToolbar
+                  channelIds={channelIds}
+                  toggleChannel={toggleChannel}
+                  selectedStatus={selectedStatus}
+                  setSelectedStatus={setSelectedStatus}
+                />
+              </>
             }
           />
         </div>

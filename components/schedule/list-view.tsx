@@ -26,6 +26,7 @@ import { Spinner } from "../ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { EditPostDialog } from "./edit-post-dialog";
 import ScheduleToolbar from "./schedule-toolbar";
+import RefreshButton from "./refresh-button";
 
 type GroupPostType = {
   key: string;
@@ -254,12 +255,7 @@ const ListView = ({
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex w-full justify-end">
-            <Button variant={"ghost"} onClick={handleRefresh}>
-              <RotateCw className="size-4" />
-              Refresh
-            </Button>
-          </div>
+          <RefreshButton handleRefresh={handleRefresh} isPending={isPending} />
           <ScheduleToolbar
             viewType="list"
             channelIds={channelIds}
