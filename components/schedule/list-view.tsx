@@ -91,6 +91,8 @@ const ListView = ({
           if (!res.ok) throw new Error("Failed to fetch posts");
           return res.json();
         },
+        refetchOnWindowFocus: true,
+        refetchInterval: 30000, // every 30s
       },
       {
         queryKey: ["posts", "totals", channelIds],
@@ -102,6 +104,8 @@ const ListView = ({
           if (!res.ok) throw new Error("Failed to fetch totals");
           return res.json();
         },
+        refetchOnWindowFocus: true,
+        refetchInterval: 30000, // every 30s
       },
     ],
   });

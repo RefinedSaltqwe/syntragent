@@ -13,20 +13,58 @@ type DuePost = {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
+//Checks for posts that are queued and ready for publishing
+//Sends the posts to publishScheduledPost triggers: { event: "post/publish.requested" },
 export const publishScheduledPostsCron = inngest.createFunction(
   {
     id: "publish-scheduled-posts-cron",
     name: "Publish Scheduled Posts",
+
+    /**
+     * Runs every 10 minutes.
+     *
+     * Inngest Cloud wakes up and calls:
+     *
+     * POST /api/inngest
+     *
+     * Your browser is NOT involved.
+     */
     triggers: [
       {
         cron: "*/10 * * * *",
       },
     ],
   },
+
   async ({ step, logger }) => {
+    /**
+     * step.run()
+     *
+     * Creates a named, durable step.
+     *
+     * Benefits:
+     * - visible in Inngest dashboard
+     * - retryable
+     * - resumable
+     * - state persisted by Inngest
+     */
     const duePosts = await step.run("load-due-scheduled-posts", async () => {
       const insforge = getInsforgeAdminClient();
+
+      /**
+       * Current time.
+       */
       const now = new Date().toISOString();
+
+      /**
+       * Find all queued posts that should already
+       * be published.
+       *
+       * Example:
+       *
+       * status = queue
+       * scheduled_at <= now
+       */
       const { data, error } = await insforge.database
         .from("scheduled_posts")
         .select("id, status, scheduled_at")
@@ -34,20 +72,42 @@ export const publishScheduledPostsCron = inngest.createFunction(
         .lte("scheduled_at", now)
         .order("scheduled_at", { ascending: true });
 
-      logger.info("Load due scheduled posts", { count: data?.length });
+      logger.info("Load due scheduled posts", {
+        count: data?.length,
+      });
 
       if (error) {
         logger.error(error);
         throw error;
       }
+
       return (data ?? []) as DuePost[];
     });
 
+    /**
+     * Nothing to publish.
+     */
     if (duePosts.length === 0) {
       return { queued: 0 };
     }
-    logger.info("Send out the post for publish", { count: duePosts.length });
 
+    logger.info("Send out the post for publish", {
+      count: duePosts.length,
+    });
+
+    /**
+     * Sends events into Inngest's event queue.
+     *
+     * This does NOT publish posts immediately.
+     *
+     * It creates events:
+     *
+     * post/publish.requested
+     *   └── postId: abc123
+     *
+     * Inngest then finds functions that listen
+     * to this event and executes them.
+     */
     await step.sendEvent(
       "send-out-post-for-publish",
       duePosts.map((post) => ({
@@ -65,16 +125,35 @@ export const publishScheduledPostsCron = inngest.createFunction(
   },
 );
 
+// Publishes posts that are due
 export const publishScheduledPost = inngest.createFunction(
   {
     id: "publish-scheduled-post",
     name: "Publish Scheduled Post",
+
+    /**
+     * This function listens for:
+     *
+     * post/publish.requested
+     *
+     * Whenever the event is sent,
+     * Inngest automatically executes
+     * this function.
+     */
     triggers: {
       event: "post/publish.requested",
     },
   },
   async ({ event, step, logger }) => {
+    /**
+     * Load the post and channel information
+     * from the database.
+     *
+     * event.data.postId
+     * comes from step.sendEvent().
+     */
     const post = await step.run("load-post", async () => {
+      // load post from database
       const insforge = getInsforgeAdminClient();
       const { data, error } = await insforge.database
         .from("scheduled_posts")
@@ -92,6 +171,13 @@ export const publishScheduledPost = inngest.createFunction(
       return data as PostType;
     });
 
+    /**
+     * Safety checks.
+     *
+     * If the post was deleted or channel
+     * no longer exists, stop execution.
+     */
+
     if (!post) {
       logger.error("Post not found", { postId: event.data.postId });
       return { skipped: true, reason: "post_not_found" };
@@ -108,12 +194,26 @@ export const publishScheduledPost = inngest.createFunction(
       return { skipped: true, reason: "channel_type_not_found" };
 
     const providerType = post.user_channels?.channel_types?.type;
+    /**
+     * Decrypt tokens because tokens
+     * are stored encrypted in the database.
+     */
     const accessToken = decrypt(post.user_channels?.access_token);
     const refreshToken = decrypt(post.user_channels?.refresh_token);
     const tokenExpiresAt = post.user_channels?.token_expires_at
       ? new Date(post.user_channels.token_expires_at).getTime()
       : null;
     const callbackUrl = `${APP_URL}/api/channel/callback`;
+    /**
+     * Determine if token should be refreshed
+     * before publishing.
+     *
+     * Instagram:
+     * refresh if expiring within 7 days.
+     *
+     * Others:
+     * refresh if already expired.
+     */
     const shouldRefreshBeforePublish =
       providerType === ChannelTypeEnum.INSTAGRAM
         ? tokenExpiresAt !== null &&
@@ -139,7 +239,21 @@ export const publishScheduledPost = inngest.createFunction(
 
     let currentAccessToken = accessToken;
 
-    // If Instagram token expires in 60 days. Refresh token.
+    /**
+     * Refresh Instagram token if needed.
+     *
+     * Flow:
+     *
+     * Database
+     *     ↓
+     * decrypt token
+     *     ↓
+     * refreshInstagramToken()
+     *     ↓
+     * saveRefreshedToken()
+     *     ↓
+     * publish with new token
+     */
     if (
       providerType === ChannelTypeEnum.INSTAGRAM &&
       tokenExpiresAt !== null &&
@@ -186,6 +300,16 @@ export const publishScheduledPost = inngest.createFunction(
     let publishedUrl: string | null = null;
 
     try {
+      /**
+       * Publish to the appropriate provider.
+       *
+       * Twitter
+       * LinkedIn
+       * Instagram
+       *
+       * Only one branch runs depending
+       * on channel type.
+       */
       publishedUrl = await step.run("publish-to-ptrovider", async () => {
         if (providerType === ChannelTypeEnum.TWITTER) {
           return publishToTwitter({
@@ -217,7 +341,13 @@ export const publishScheduledPost = inngest.createFunction(
 
         throw new Error(`Unsupported provider type: ${providerType}`);
       });
-
+      /**
+       * Mark database record as published.
+       *
+       * queue
+       *   ↓
+       * published
+       */
       await step.run("mark-post-published", async () => {
         await markPostPublished(post.id, publishedUrl);
       });
