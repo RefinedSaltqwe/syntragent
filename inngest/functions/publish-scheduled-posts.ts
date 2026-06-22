@@ -404,42 +404,110 @@ async function publishToInstagram({
   images?: ImageObject[];
   logger: any;
 }) {
-  const imageUrl = images?.[0]?.url;
-
-  if (!imageUrl) {
+  if (!images?.length) {
     throw new Error("Instagram requires at least one image");
   }
 
-  // Step 1: Create media container
-  const mediaRes = await fetch(
-    `https://graph.instagram.com/v24.0/${instagramAccountId}/media`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+  let creationId: string;
+
+  // -----------------------------
+  // SINGLE IMAGE POST
+  // -----------------------------
+  if (images.length === 1) {
+    const mediaRes = await fetch(
+      `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image_url: images[0].url,
+          caption,
+        }),
       },
-      body: JSON.stringify({
-        image_url: imageUrl,
-        caption,
-      }),
-    },
-  );
+    );
 
-  const media = await mediaRes.json();
+    const media = await mediaRes.json();
 
-  logger.info("Instagram media response", media);
+    logger.info("Instagram media response", media);
 
-  if (!media.id) {
-    throw new Error(JSON.stringify(media));
+    if (!media.id) {
+      throw new Error(JSON.stringify(media));
+    }
+
+    creationId = media.id;
   }
 
-  // Instagram sometimes needs a few seconds
+  // -----------------------------
+  // CAROUSEL POST
+  // -----------------------------
+  else {
+    const children: string[] = [];
+
+    for (const image of images) {
+      const childRes = await fetch(
+        `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image_url: image.url,
+            is_carousel_item: true,
+          }),
+        },
+      );
+
+      const child = await childRes.json();
+
+      logger.info("Instagram child response", child);
+
+      if (!child.id) {
+        throw new Error(JSON.stringify(child));
+      }
+
+      children.push(child.id);
+    }
+
+    const carouselRes = await fetch(
+      `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          media_type: "CAROUSEL",
+          children,
+          caption,
+        }),
+      },
+    );
+
+    const carousel = await carouselRes.json();
+
+    logger.info("Instagram carousel response", carousel);
+
+    if (!carousel.id) {
+      throw new Error(JSON.stringify(carousel));
+    }
+
+    creationId = carousel.id;
+  }
+
+  // Give Instagram time to process the container
   await new Promise((resolve) => setTimeout(resolve, 5000));
 
-  // Step 2: Publish media
+  // -----------------------------
+  // PUBLISH
+  // -----------------------------
   const publishRes = await fetch(
-    `https://graph.instagram.com/v24.0/${instagramAccountId}/media_publish`,
+    `https://graph.facebook.com/v24.0/${instagramAccountId}/media_publish`,
     {
       method: "POST",
       headers: {
@@ -447,7 +515,7 @@ async function publishToInstagram({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        creation_id: media.id,
+        creation_id: creationId,
       }),
     },
   );
@@ -460,9 +528,11 @@ async function publishToInstagram({
     throw new Error(JSON.stringify(publish));
   }
 
-  // Step 3: Get permalink
+  // -----------------------------
+  // GET PERMALINK
+  // -----------------------------
   const permalinkRes = await fetch(
-    `https://graph.instagram.com/v24.0/${publish.id}?fields=permalink`,
+    `https://graph.facebook.com/v24.0/${publish.id}?fields=permalink`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
