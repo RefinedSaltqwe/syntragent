@@ -1,3 +1,4 @@
+import { IMAGE_SIZE_MB } from "@/constants/post";
 import { getInsforgeUploadClient } from "@/lib/insforge-server";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -7,7 +8,7 @@ function sanitizeFileName(name: string) {
 }
 
 export async function POST(request: Request) {
-  const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+  const MAX_SIZE = IMAGE_SIZE_MB * 1024 * 1024; // 8 MB
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     }
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { error: "File exceeds the 10MB limit" },
+        { error: `File exceeds the ${IMAGE_SIZE_MB}MB limit` },
         { status: 400 },
       );
     }

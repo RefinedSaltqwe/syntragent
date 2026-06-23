@@ -20,7 +20,7 @@ import { ChannelType } from "@/types/channel.type";
 import { ButtonGroup } from "../ui/button-group";
 import { Spinner } from "../ui/spinner";
 import { ImageObject } from "@/types/post.type";
-import { POST_STATUS, PostStatus } from "@/constants/post";
+import { CHANNEL_RULES, POST_STATUS, PostStatus } from "@/constants/post";
 import { getChannelIcon } from "@/constants/channels";
 import ContentTextarea from "../content-textarea";
 import IdeasList from "./ideas-list";
@@ -138,6 +138,24 @@ export function EditPostDialog({
       seconds: 0,
       milliseconds: 0,
     });
+
+    // Check for channel's rules max-image and if image is required
+    const rules = CHANNEL_RULES[channel!.type];
+    if (rules) {
+      const imageCount = post.images?.length ?? 0;
+
+      if (rules.requiresImage && imageCount === 0) {
+        toast.error(`${channel!.type} posts must include at least one image`);
+        return;
+      }
+
+      if (imageCount > rules.maxImages) {
+        toast.error("Too many images", {
+          description: `${channel!.type} supports up to ${rules.maxImages} images.`,
+        });
+        return;
+      }
+    }
 
     updatePostMutation.mutate({
       postId: post.id,

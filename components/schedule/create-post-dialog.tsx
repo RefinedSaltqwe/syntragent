@@ -1,6 +1,6 @@
 "use client";
 import { ChannelTypeEnum, getChannelIcon } from "@/constants/channels";
-import { POST_STATUS, PostStatus } from "@/constants/post";
+import { CHANNEL_RULES, POST_STATUS, PostStatus } from "@/constants/post";
 import { cn } from "@/lib/utils";
 import { ChannelType } from "@/types/channel.type";
 import { IdeaType } from "@/types/idea.type";
@@ -328,13 +328,26 @@ const CreatePostDialog = ({ open, onOpenChange, selectedDate }: PropsType) => {
       return;
     }
 
-    const instagram = postToCreate.find(
-      (post) => post.channelType === ChannelTypeEnum.INSTAGRAM,
-    );
+    // Check for channel's rules max-image and if image is required
+    for (const post of postToCreate) {
+      const rules = CHANNEL_RULES[post.channelType];
+      if (!rules) continue;
 
-    if (instagram && (!instagram.images || instagram.images.length === 0)) {
-      toast.error("Instagram posts must include at least one image");
-      return;
+      const imageCount = post.images?.length ?? 0;
+
+      if (rules.requiresImage && imageCount === 0) {
+        toast.error(
+          `${post.channelType} posts must include at least one image`,
+        );
+        return;
+      }
+
+      if (imageCount > rules.maxImages) {
+        toast.error("Too many images", {
+          description: `${post.channelType} supports up to ${rules.maxImages} images.`,
+        });
+        return;
+      }
     }
 
     const parsedTime = parse(timeSlot, "h:mm a", new Date());

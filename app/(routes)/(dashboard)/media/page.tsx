@@ -2,6 +2,7 @@
 import MediaList from "@/components/schedule/media-list";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { IMAGE_SIZE_MB } from "@/constants/post";
 import { useHandleDialog } from "@/hooks/use-confirm-dialog";
 import { deleteImages } from "@/lib/api/media";
 import { ImageObject, ImagesResponse } from "@/types/post.type";
@@ -11,17 +12,13 @@ import { Plus, Trash } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type MediaProps = {
-  ca: string;
-};
-
-const Media: React.FC<MediaProps> = () => {
+const Media: React.FC = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { handleDialog, proceed } = useHandleDialog();
   const [isUploading, setIsUploading] = React.useState(false);
   const [images, setImages] = useState<ImageObject[]>([]);
-  const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+  const MAX_SIZE = IMAGE_SIZE_MB * 1024 * 1024;
   const imgCount = images.length;
   const { data: fetchedImages = [] } = useQuery({
     queryKey: ["images"],
@@ -85,7 +82,7 @@ const Media: React.FC<MediaProps> = () => {
           toast.error(
             `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB.`,
             {
-              description: "Maximum allowed size is 10MB",
+              description: `Maximum allowed size is ${IMAGE_SIZE_MB}MB`,
             },
           );
           return;
