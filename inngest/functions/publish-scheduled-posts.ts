@@ -452,77 +452,39 @@ async function publishToInstagram({
   // CAROUSEL POST
   // -----------------------------
   else {
-    const children: string[] = [];
     logger.info("Posting Carousel");
     logger.info("Images received", images.length);
 
-    for (const image of images) {
-      logger.info("Creating child for", image.url);
+    const children = await Promise.all(
+      images.map(async (image) => {
+        logger.info("Creating child for", image.url);
 
-      const childRes = await fetch(
-        `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            image_url: image.url,
-            is_carousel_item: true,
-          }),
-        },
-      );
-
-      const child = await childRes.json();
-
-      logger.info("Instagram child response", child);
-
-      if (!child.id) {
-        throw new Error(JSON.stringify(child));
-      }
-
-      // Wait for Instagram to finish processing the image
-      const maxAttempts = 30;
-
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        const statusRes = await fetch(
-          `https://graph.facebook.com/v24.0/${child.id}?fields=status_code`,
+        const childRes = await fetch(
+          `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
           {
+            method: "POST",
             headers: {
               Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
             },
+            body: JSON.stringify({
+              image_url: image.url,
+              is_carousel_item: true,
+            }),
           },
         );
 
-        const status = await statusRes.json();
+        const child = await childRes.json();
 
-        logger.info(
-          `Container ${child.id} status (attempt ${attempt})`,
-          status,
-        );
+        logger.info("Instagram child response", child);
 
-        if (status.status_code === "FINISHED") {
-          break;
+        if (!child.id) {
+          throw new Error(JSON.stringify(child));
         }
 
-        if (status.status_code === "ERROR") {
-          throw new Error(
-            `Container ${child.id} failed processing: ${JSON.stringify(status)}`,
-          );
-        }
-
-        if (attempt === maxAttempts) {
-          throw new Error(
-            `Timed out waiting for container ${child.id} to finish processing`,
-          );
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
-
-      children.push(child.id);
-    }
+        return child.id;
+      }),
+    );
 
     logger.info("Children IDs", children);
 
