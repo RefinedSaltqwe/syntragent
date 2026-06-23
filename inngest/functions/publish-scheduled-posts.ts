@@ -455,38 +455,35 @@ async function publishToInstagram({
     logger.info("Posting Carousel");
     logger.info("Images received", images.length);
 
-    const children = await Promise.all(
-      images.map(async (image) => {
-        logger.info("Creating child for", image.url);
-
-        const childRes = await fetch(
-          `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              image_url: image.url,
-              is_carousel_item: true,
-            }),
+    const children: string[] = [];
+    logger.info("Posting Carousel");
+    for (const image of images) {
+      logger.info("Creating child for", image.url);
+      const childRes = await fetch(
+        `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            image_url: image.url,
+            is_carousel_item: true,
+          }),
+        },
+      );
 
-        const child = await childRes.json();
+      const child = await childRes.json();
 
-        logger.info("Instagram child response", child);
+      logger.info("Instagram child response", child);
 
-        if (!child.id) {
-          throw new Error(JSON.stringify(child));
-        }
+      if (!child.id) {
+        throw new Error(JSON.stringify(child));
+      }
 
-        return child.id;
-      }),
-    );
-
-    logger.info("Children IDs", children);
+      children.push(child.id);
+    }
 
     const carouselRes = await fetch(
       `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
@@ -498,7 +495,7 @@ async function publishToInstagram({
         },
         body: JSON.stringify({
           media_type: "CAROUSEL",
-          children: children.join(","),
+          children,
           caption,
         }),
       },
