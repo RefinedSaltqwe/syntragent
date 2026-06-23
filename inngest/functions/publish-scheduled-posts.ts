@@ -6,6 +6,7 @@ import { decrypt, encrypt } from "@/lib/encryption";
 import { refreshOauthToken } from "@/lib/social-oauth";
 import { ChannelTypeEnum } from "@/constants/channels";
 import { refreshInstagramToken } from "@/lib/providers/instagram";
+import { Logger } from "inngest";
 
 type DuePost = {
   id: string;
@@ -191,7 +192,7 @@ export const publishScheduledPost = inngest.createFunction(
         .eq("status", "publishing")
         .single();
 
-      logger.info("Load post", { data });
+      // logger.info("Load post", { data });
       if (error) {
         logger.error(error);
         throw error;
@@ -402,7 +403,7 @@ async function publishToInstagram({
   instagramAccountId: string;
   caption: string;
   images?: ImageObject[];
-  logger: any;
+  logger: Logger;
 }) {
   if (!images?.length) {
     throw new Error("Instagram requires at least one image");
@@ -410,7 +411,9 @@ async function publishToInstagram({
 
   let creationId: string;
 
-  // Single image
+  // =============================
+  // SINGLE IMAGE
+  // =============================
   if (images.length === 1) {
     const mediaRes = await fetch(
       `https://graph.instagram.com/v24.0/${instagramAccountId}/media`,
@@ -429,7 +432,7 @@ async function publishToInstagram({
 
     const media = await mediaRes.json();
 
-    logger.info("Instagram media response", media);
+    logger.info("Instagram media response", !media);
 
     if (!media.id) {
       throw new Error(JSON.stringify(media));
@@ -437,7 +440,9 @@ async function publishToInstagram({
 
     creationId = media.id;
   }
-  // Carousel
+  // =============================
+  // CAROUSEL
+  // =============================
   else {
     logger.info("Posting Carousel", {
       imageCount: images.length,
@@ -462,7 +467,7 @@ async function publishToInstagram({
 
         const child = await childRes.json();
 
-        logger.debug?.("Instagram child response", child);
+        logger.debug?.("Instagram child response", !child);
 
         if (!child.id) {
           throw new Error(JSON.stringify(child));
@@ -494,7 +499,7 @@ async function publishToInstagram({
 
     const carousel = await carouselRes.json();
 
-    logger.info("Instagram carousel response", carousel);
+    logger.info("Instagram carousel response", !carousel);
 
     if (!carousel.id) {
       throw new Error(JSON.stringify(carousel));
@@ -523,7 +528,7 @@ async function publishToInstagram({
 
   const publish = await publishRes.json();
 
-  logger.info("Instagram publish response", publish);
+  logger.info("Instagram publish response", !publish);
 
   if (!publish.id) {
     throw new Error(JSON.stringify(publish));
@@ -541,7 +546,7 @@ async function publishToInstagram({
 
   const permalink = await permalinkRes.json();
 
-  logger.info("Instagram permalink response", permalink);
+  logger.info("Instagram permalink response", !permalink);
 
   return permalink.permalink ?? publish.id;
 }
