@@ -410,10 +410,18 @@ async function publishToInstagram({
 
   let creationId: string;
 
+  logger.info(
+    "Instagram images",
+    images?.map((img) => img.url),
+  );
+
+  logger.info("Images length", images.length);
+
   // -----------------------------
   // SINGLE IMAGE POST
   // -----------------------------
   if (images.length === 1) {
+    logger.info("Single Image");
     const mediaRes = await fetch(
       `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
       {
@@ -445,8 +453,12 @@ async function publishToInstagram({
   // -----------------------------
   else {
     const children: string[] = [];
+    logger.info("Posting Carousel");
+    logger.info("Images received", images.length);
 
     for (const image of images) {
+      logger.info("Creating child for", image.url);
+
       const childRes = await fetch(
         `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
         {
@@ -470,8 +482,49 @@ async function publishToInstagram({
         throw new Error(JSON.stringify(child));
       }
 
+      // Wait for Instagram to finish processing the image
+      const maxAttempts = 30;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const statusRes = await fetch(
+          `https://graph.facebook.com/v24.0/${child.id}?fields=status_code`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+
+        const status = await statusRes.json();
+
+        logger.info(
+          `Container ${child.id} status (attempt ${attempt})`,
+          status,
+        );
+
+        if (status.status_code === "FINISHED") {
+          break;
+        }
+
+        if (status.status_code === "ERROR") {
+          throw new Error(
+            `Container ${child.id} failed processing: ${JSON.stringify(status)}`,
+          );
+        }
+
+        if (attempt === maxAttempts) {
+          throw new Error(
+            `Timed out waiting for container ${child.id} to finish processing`,
+          );
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+
       children.push(child.id);
     }
+
+    logger.info("Children IDs", children);
 
     const carouselRes = await fetch(
       `https://graph.facebook.com/v24.0/${instagramAccountId}/media`,
@@ -483,7 +536,7 @@ async function publishToInstagram({
         },
         body: JSON.stringify({
           media_type: "CAROUSEL",
-          children,
+          children: children.join(","),
           caption,
         }),
       },
