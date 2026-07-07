@@ -1,8 +1,9 @@
 "use client";
-import { ChannelTypeEnum, getChannelIcon } from "@/constants/channels";
+import { getChannelIcon } from "@/constants/channels";
 import { CHANNEL_RULES, POST_STATUS, PostStatus } from "@/constants/post";
 import { cn } from "@/lib/utils";
 import { ChannelType } from "@/types/channel.type";
+import { ActionTabType } from "@/types/common.type";
 import { IdeaType } from "@/types/idea.type";
 import { ImageObject } from "@/types/post.type";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -34,10 +35,9 @@ import { Spinner } from "../ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { AIAssistant } from "./ai-assitant";
 import IdeasList from "./ideas-list";
+import MediaList from "./media-list";
 import PreviewPanel from "./preview";
 import { ScheduleDatePicker } from "./schedule-date-picker";
-import MediaList from "./media-list";
-import { ActionTabType } from "@/types/common.type";
 
 type PropsType = {
   open: boolean;
